@@ -1,0 +1,3 @@
+redis
+GitPython
+git+https://oauth2:53gZwasv6UmExxrohqPm@gitlab.com/steven.horn/covid-prevalence.git

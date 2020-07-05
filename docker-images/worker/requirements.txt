@@ -1,0 +1,11 @@
+numpy
+matplotlib
+pymc3==3.9.1
+theano
+pandas
+seaborn
+GitPython
+geopandas
+geojson
+folium==0.11.0
+git+https://github.com/Priesemann-Group/covid19_inference.git
