@@ -1,9 +1,46 @@
+
+'''
+
+This is the main file for the worker process.  There will normally be
+many worker processes.
+
+TODO: Document
+
+
+LICENSE
+
+    COVID-Prevalence  Copyright (c) Her Majesty the Queen in Right of Canada, 
+    as represented by the Minister of National Defence, 2020.
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+    The author can be contacted at steven.horn@forces.gc.ca
+'''
+
+import os
+
+# Here, we add an environment variable to help theano locate the BLAS libraries.
+# found in ./usr/lib/x86_64-linux-gnu/libblas.so
+# THEANO_FLAGS=blas.ldflags="-L/usr/lib/x86_64-linux-gnu/ -lblas"
+# More info at http://deeplearning.net/software/theano/troubleshooting.html
+os.environ["THEANO_FLAGS"] = 'blas.ldflags="-L/usr/lib/x86_64-linux-gnu/ -lblas"'
+
 import time
 import logging
 import json
 import git
 from covid_prevalence.rediswq import RedisWQ 
-import os
 import datetime
 import pymc3 as pm
 import numpy as np
@@ -59,6 +96,10 @@ if __name__=='__main__':
       repo_path,
       depth=1,
       branch="master")
+
+  # Configure git user
+  repo.config_writer().set_value("user", "name", "Steven Horn").release()
+  repo.config_writer().set_value("user", "email", "steven@horn.work").release()
 
   # we will work on a different branch
   worker_branch = 'latest-' + datetime.datetime.utcnow().strftime('%y%m%d')
@@ -224,8 +265,15 @@ if __name__=='__main__':
         _, _ = covprev.data.savecsv(this_model, trace, pop)
 
       try:
+        
+        log.info('Pulling from git prior to pushing')
+        try:
+          res = repo.remotes.origin.pull(worker_branch)
+        except git.GitCommandError as e:
+          log.error(str(e))
+
         log.info('Pushing to git')
-        gitpush("Updates for " + popname, 
+        gitpush("Updates for " + pop['name'], 
           repo_path=repo_path,
           repo_branch=worker_branch)
       except Exception as e:
