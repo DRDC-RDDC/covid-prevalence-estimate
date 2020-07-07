@@ -1,9 +1,13 @@
 FROM python:3.6.11-slim-buster
-# not 3.6.10-buster  3.6.11-alpine3.12 (fails)
+# 3.6.11-alpine3.12 (fails)
+# Python 3.6 is used since google colab uses it.  3.8 would be better.
 
 # g++ is needed for compiling optimized model
+# libopenblas provides faster calculations in theano (pymc3)
 RUN apt-get update \
-    && apt-get install -y g++ \
+    && apt-get install -y --no-install-recommends apt-utils \
+    && apt-get install -y --no-install-recommends g++ \
+    && apt-get install -y --no-install-recommends libopenblas-dev \
     && apt-get install -y --no-install-recommends gnutls-bin \
     && apt-get install -y --no-install-recommends git \
     && apt-get purge -y --auto-remove \
@@ -26,6 +30,6 @@ WORKDIR /home/simuser
 USER simuser
 
 COPY controller.py .
-COPY rediswq.py .
 
+# Run the main program
 CMD [ "python", "./controller.py" ]

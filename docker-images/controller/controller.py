@@ -22,7 +22,7 @@
 
 1 - Download the data from most recent repository
 2 - Check what areas need to be processed
-3 - Send the configuration and data to worker nodes
+3 - Send the configuration and data to worker nodes via a redis message queue
 '''
 
 import logging
@@ -62,7 +62,7 @@ if __name__=='__main__':
 
     oauth = os.getenv('gitlab_oauth', default='53gZwasv6UmExxrohqPm')
 
-    repopath = "https://oauth2:"+ oauth +"@gitlab.com/steven.horn/covid-prevalence-estimate.git"
+    repopath = "https://oauth2:"+ oauth +"@gitlab.com/stevenhorn/covid-prevalence-estimate.git"
 
     log.info("cloning program from %s" % repopath)
 
@@ -74,7 +74,7 @@ if __name__=='__main__':
     # This is the worker queue.
     queuename = os.getenv('redis_worker_queue', default='covidprev')
     log.info("Connecting to redis queue (%s)" % queuename)
-    #q = rediswq.RedisWQ(name=queuename, host="redis")
+    q = RedisWQ(name=queuename, host="redis")
 
     # Load the config file from the repo
     log.info("Loading configuration")
@@ -97,13 +97,13 @@ if __name__=='__main__':
             pop=pop,
             new_cases=new_cases.to_json(orient='table'),        # This serializes the pandas data
             cum_deaths=cum_deaths.to_json(orient='table'),      # 
-            submitted=str(datetime.datetime.utcnow()),
-            rval = randint(1,1000)
+            submitted=str(datetime.datetime.utcnow())
         )
         
         # send the work-item to the worker queue
+        
+        q.enqueue(json.dumps(work_item))
         log.info("Job Queued: %s" % pop['name'] )
-        #q.enqueue(json.dumps(work_item))
         #sleep(randint(10,50))
 
     log.info("Controller completed")

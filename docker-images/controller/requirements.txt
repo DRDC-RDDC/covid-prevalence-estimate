@@ -1,3 +1,4 @@
 redis
 GitPython
-git+https://oauth2:53gZwasv6UmExxrohqPm@gitlab.com/steven.horn/covid-prevalence.git
+git+https://oauth2:53gZwasv6UmExxrohqPm@gitlab.com/stevenhorn/covid-prevalence-estimate.git
+https://github.com/Priesemann-Group/covid19_inference/archive/master.zip
