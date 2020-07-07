@@ -16,6 +16,10 @@ from covid19_inference.model import *
 from datetime import timezone
 from dateutil.parser import parse, isoparse
 from pathlib import Path
+from covid_prevalence.models import SEIRa     # Our model
+from covid_prevalence.data import savecsv
+from covid_prevalence.plots import plot_data, plot_fit, plot_IFR, plot_posteriors, plot_prevalence
+from covid_prevalence._repository import gitpush
 
 # this is used for json serialization of dates
 def converters(o):
@@ -36,14 +40,37 @@ host = os.getenv("REDIS_SERVICE_HOST", default="redis")
 queuename = os.getenv('redis_worker_queue', default='covidprev')
 oauth = os.getenv('gitlab_oauth', default='53gZwasv6UmExxrohqPm')
 timelimit = 60*60*1 # these hours should be enough per region - make env?
+repo_path = "/content/covid-prevalence"
 
 if __name__=='__main__':
   q = RedisWQ(name=queuename, host=host)
   log.info("Worker with sessionID: " +  q.sessionID())
   log.info("Initial queue state: empty=" + str(q.empty()))
 
-  # Clone the repository for output
+  # Clone the repository which will recieve the output
+  repo_origin_path = "https://oauth2:"+ oauth +"@gitlab.com/stevenhorn/covid-prevalence.git"
+  log.info("cloning repository from %s" % repo_origin_path)
 
+  repo = git.Repo.clone_from(repo_origin_path, 
+      repo_path,
+      depth=1,
+      branch="master")
+
+  # we will work on a different branch
+  worker_branch = 'latest-' + datetime.datetime.utcnow().strftime('%y%m%d')
+  repo.git.checkout('-b', worker_branch)
+
+  # work on the most recent version of the branch if it exists on origin.
+  try:
+    res = repo.remotes.origin.pull(worker_branch)
+  except git.GitCommandError as e:
+    log.error(str(e))
+
+  # It's possible that this is a new branch.  This ensures it on the remote.
+  try:
+    repo.remotes.origin.push(worker_branch)
+  except git.GitCommandError as e:
+    log.error(str(e))
 
   # run the processing loop - if the queue is empty, then this program will end
   while not q.empty():
@@ -75,9 +102,123 @@ if __name__=='__main__':
       cd_df = pd.read_json(task['cum_deaths'], orient='table')
       cum_deaths = cd_df[cd_df.columns[0]]
 
-      bd = isoparse(pop['date_start'])
+      bd = isoparse(pop['date_start']) # This is the first day of data
+      pa_a = model['pa_a']
+      pa_b = model['pa_b']
+      pu_a = model['pu_a']
+      pu_b = model['pu_b']
+      pr_gamma_mu_days = model['gamma_mu_days']
+      pr_gamma_mu_sigma = model['gamma_mu_sigma']
+      pr_asym_recover_mu_days = model['asym_recover_mu_days']
+      pr_asym_recover_mu_sigma = model['asym_recover_mu_sigma']
+      pr_sym_recover_mu_days = model['sym_recover_mu_days']
+      pr_sym_recover_mu_sigma = model['sym_recover_mu_sigma']
 
-      time.sleep(50) # Put your actual work here instead of sleep.
+      # Model parameters
+      params_model = dict(
+        new_cases_obs=new_cases,
+        data_begin=bd,
+        fcast_len=pop['fcast_len'],             # forecast model
+        diff_data_sim=pop['diff_data_sim'],     # number of days for burn-in
+        N_population=pop['N'],
+      )
+
+      # Set up inferrence of infection rate
+      change_points_d2 = []
+      daystep = pop['daystep_lambda']
+      delta = datetime.datetime.utcnow() - bd
+
+      for dd in np.arange(daystep,delta.days-daystep,daystep,dtype="int"):
+        change_points_d2 += [
+          dict( # Fit the end
+                pr_mean_date_transient=bd+datetime.timedelta(days=int(dd)),
+                pr_median_transient_len=daystep/2,    # how fast is this transition?  
+                pr_sigma_transient_len=0.5,   # uncertainty how long to apply
+                pr_sigma_date_transient=2,    # uncertainty when applied
+                relative_to_previous=True,    
+                pr_factor_to_previous=1,      # mean moves log this -> i.e. log(1) = 0+
+                pr_median_lambda=0,           # normal offset rel to prev
+                pr_sigma_lambda=0.2,
+              )
+        ]
+
+      change_points = change_points_d2  # dynamic
+
+      with cov19.model.Cov19Model(**params_model) as this_model:
+        # apply change points, lambda is in log scale
+        lambda_t_log = cov19.model.lambda_t_with_sigmoids(
+            pr_median_lambda_0=pop['median_lambda_0'],
+            pr_sigma_lambda_0=pop['sigma_lambda_0'],
+            change_points_list=change_points,
+        )
+        pa = pm.Beta(name="pa", alpha=model['pa_a'], beta=model['pa_b'])
+        pu = pm.Uniform(name="pu", lower=model['pu_a'], upper=model['pu_b'])
+        mu = pm.Lognormal(name="mu", mu=np.log(1 / model['asym_recover_mu_days']), sigma=model['asym_recover_mu_sigma'])    # Asymptomatic infectious period until recovered
+        mus = pm.Lognormal(name="mus", mu=np.log(1 / model['sym_recover_mu_days']), sigma=model['sym_recover_mu_sigma'])   # Pre-Symptomatic infectious period until showing symptoms -> isolated
+        gamma = pm.Lognormal(name="gamma", mu=np.log(1 / model['gamma_mu_days']), sigma=model['gamma_mu_sigma'])
+
+        new_Is_t = SEIRa(lambda_t_log, gamma, mu, mus, pa, pu,
+                        asym_ratio = model['asym_ratio'],  # 0.5 asymptomatic people are less infectious? - source CDC
+                        pr_Ia_begin=pop['pr_Ia_begin'],
+                        pr_Is_begin=pop['pr_Is_begin'],
+                        model=this_model)
+        
+        new_cases_inferred_raw = cov19.model.delay_cases(
+            cases=new_Is_t,
+            pr_mean_of_median=pop['pr_delay_mean_of_median'],
+        )
+
+        # apply a weekly modulation, fewer reports during weekends
+        if 'noweekmod' in pop and pop['noweekmod']:
+          new_cases_inferred_tr = pm.Deterministic("new_cases", new_cases_inferred_raw)
+          new_cases_inferred = new_cases_inferred_raw
+        else:
+          new_cases_inferred = cov19.model.week_modulation(
+              new_cases_inferred_raw,
+              pr_mean_weekend_factor=pop['pr_mean_weekend_factor'],  # 1.1
+              pr_sigma_weekend_factor=pop['pr_sigma_weekend_factor'],   # 1.2 0.5 default
+              name_cases="new_cases")
+
+        # set the likeliehood
+        cov19.model.student_t_likelihood(new_cases_inferred)
+
+        # sampling settings
+        numsims = settings['numsims']
+        numtune = settings['numtune']
+
+        # overrides for populations
+        if 'numsims' in pop:
+          log.info('numsims override in population')
+          numsims = pop['numsims']
+        if 'numtune' in pop:
+          log.info('numtune override in population')
+          numsims = pop['numtune']
+
+      cores = 4
+      if pop['run'] == False:
+        plot_data(this_model, new_cases, pop, settings)
+      else:
+        trace = pm.sample(
+          model=this_model, 
+          tune=numtune, 
+          draws=numsims, 
+          n_init=50000,     # we really should have converged by 50k
+          init="advi+adapt_diag", cores=cores)
+
+      # TODO: check if advi did not converge (bad model fit)
+
+      if pop['run'] == True:
+        plot_fit(this_model, trace, new_cases, pop, settings)
+        plot_posteriors(this_model, trace, pop, settings)
+        plot_prevalence(this_model, trace, pop, settings)
+        plot_IFR(this_model, trace, pop, settings, cum_deaths)
+        #dft, dfn = savecsv(this_model, trace, pop)
+        _, _ = savecsv(this_model, trace, pop)
+
+      try:
+        gitpush("Updates for " + popname)
+      except:
+        log.error("Error pushing")
 
       # Mark as completed and remove from work queue.
       q.complete(item)

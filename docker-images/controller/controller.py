@@ -87,24 +87,30 @@ if __name__=='__main__':
     # create worker jobs for each population
     log.info("Processing populations")
     for pop in config['populations']:
-        # Fetch Data for processing
-        new_cases, cum_deaths, bd = covprev.data.get_data(pop)
 
-        # Structure work item for worker
-        work_item = dict(
-            model=model,
-            settings=settings,
-            pop=pop,
-            new_cases=new_cases.to_json(orient='table'),        # This serializes the pandas data
-            cum_deaths=cum_deaths.to_json(orient='table'),      # 
-            submitted=str(datetime.datetime.utcnow())
-        )
-        
-        # send the work-item to the worker queue
-        
-        q.enqueue(json.dumps(work_item))
-        log.info("Job Queued: %s" % pop['name'] )
-        #sleep(randint(10,50))
+        if pop['run'] == True:
+            # Fetch Data for processing
+            new_cases, cum_deaths, bd = covprev.data.get_data(pop)
+
+            # Structure work item for worker
+            work_item = dict(
+                model=model,
+                settings=settings,
+                pop=pop,
+                new_cases=new_cases.to_json(orient='table'),        # This serializes the pandas data
+                cum_deaths=cum_deaths.to_json(orient='table'),      # 
+                submitted=str(datetime.datetime.utcnow())
+            )
+            
+            # send the work-item to the worker queue
+            q.enqueue(json.dumps(work_item))
+            log.info("Job Queued: %s" % pop['name'] )
+        else:
+            log.info("Job Skipped: %s" % pop['name'] )
 
     log.info("Controller completed")
-    sleep(60*60*12)
+
+    # The program will now end.  
+    # The pod running it will close if restart=Never
+
+    #sleep(60*60*12)
