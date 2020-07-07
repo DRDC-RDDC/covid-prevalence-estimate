@@ -62,7 +62,7 @@
       "pr_sigma_weekend_factor": 2,
       "numsims": 30,
       "numtune": 80,
-      "run": true,
+      "run": false,
       "date_start": "2020-03-13T00:00:00"
     },
     {
@@ -82,7 +82,7 @@
       "pr_delay_mean_of_median": 5,
       "pr_mean_weekend_factor": 0.1,
       "pr_sigma_weekend_factor": 2,
-      "run": true,
+      "run": false,
       "date_start": "2020-03-20T00:00:00"
     },
     {
@@ -207,7 +207,7 @@
       "pr_sigma_weekend_factor": 2,
       "numsims": 30,
       "numtune": 80,
-      "run": true,
+      "run": false,
       "date_start": "2020-03-20T00:00:00"
     },
     {
@@ -229,7 +229,7 @@
       "pr_sigma_weekend_factor": 2,
       "numsims": 40,
       "numtune": 80,
-      "run": true,
+      "run": false,
       "date_start": "2020-03-20T00:00:00"
     },
     {
@@ -251,7 +251,7 @@
       "pr_sigma_weekend_factor": 2,
       "numsims": 40,
       "numtune": 80,
-      "run": true,
+      "run": false,
       "date_start": "2020-03-20T00:00:00"
     },
     {
@@ -874,7 +874,7 @@
       "pr_sigma_weekend_factor": 1,
       "numsims": 50,
       "numtune": 80,
-      "run": true,
+      "run": false,
       "date_start": "2020-03-14T00:00:00"
     },
     {
