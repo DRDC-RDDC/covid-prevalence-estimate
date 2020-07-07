@@ -24,13 +24,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-from utility import get_folders
+from . import utility as ut
 
 def plot_data(this_model, new_cases, pop, settings, closeplot=True):
   ShowPreliminary = settings['ShowPreliminary']
   popname = pop['name']
 
-  savefolder, folder = get_folders(pop)
+  savefolder, folder = ut.get_folders(pop)
   
   x_data = pd.date_range(start=this_model.data_begin, 
                          end=this_model.data_begin + datetime.timedelta(days=new_cases.shape[0]-1) )
@@ -64,7 +64,7 @@ def plot_data(this_model, new_cases, pop, settings, closeplot=True):
 def plot_fit(this_model, trace, new_cases, pop, settings, closeplot=True):
   ShowPreliminary = settings['ShowPreliminary']
   popname = pop['name']
-  savefolder, folder = get_folders(pop)
+  savefolder, folder = ut.get_folders(pop)
     # inspect the chain realizations
   trace.varnames
   I_t = trace["new_detections"][:, None]
@@ -117,7 +117,7 @@ def plot_fit(this_model, trace, new_cases, pop, settings, closeplot=True):
 def plot_posteriors(this_model, trace, pop, settings):
   # spreading rate fit
   ShowPreliminary = settings['ShowPreliminary']
-  savefolder, folder = get_folders(pop)
+  savefolder, folder = ut.get_folders(pop)
   pa = trace["pa"][:, None]
   pu = trace["pu"][:, None]
   I_t = trace["I_t"][:, None]
@@ -194,7 +194,7 @@ def plot_prevalence(this_model, trace, pop, settings, closeplot=True): #closeplo
   # this is the infected asymptomatic AND symptimatic
   ShowPreliminary = settings['ShowPreliminary']
   popname = pop['name']
-  savefolder, folder = get_folders(pop)
+  savefolder, folder = ut.get_folders(pop)
   trimend = -1#-25
   trimstart=0
   N = this_model.N_population
@@ -451,7 +451,7 @@ def plot_IFR(this_model, trace, pop, settings, cum_deaths):
   # this is the infected asymptomatic AND symptimatic
   ShowPreliminary = settings['ShowPreliminary']
   popname = pop['name']
-  savefolder, folder = get_folders(pop)
+  savefolder, folder = ut.get_folders(pop)
   # IFR estimate
   death_t = np.array(cum_deaths)
   #print(death_t)
