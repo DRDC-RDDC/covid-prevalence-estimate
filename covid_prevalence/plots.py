@@ -18,3 +18,502 @@
     The author can be contacted at steven.horn@forces.gc.ca
 '''
 
+import covid19_inference as cov19
+import datetime
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import seaborn as sns
+from utility import get_folders
+
+def plot_data(this_model, new_cases, pop, settings, closeplot=True):
+  ShowPreliminary = settings['ShowPreliminary']
+  popname = pop['name']
+
+  savefolder, folder = get_folders(pop)
+  
+  x_data = pd.date_range(start=this_model.data_begin, 
+                         end=this_model.data_begin + datetime.timedelta(days=new_cases.shape[0]-1) )
+
+  shift = 0#7
+  x_data2 = pd.date_range(start=this_model.data_begin- datetime.timedelta(shift), 
+                          end=this_model.data_begin + datetime.timedelta(days=new_cases.shape[0]-1) )
+
+  #this_model.sim_begin
+
+  fig, ax1 = plt.subplots()
+
+  plt.ylabel("Number of new cases reported")
+  ax1.plot(x_data[:len(new_cases.values)], new_cases.values, 'b--', label="new cases data")
+  plt.legend()
+  plt.title("Model comparison to data %s" % popname)
+  plt.xticks(rotation=45)
+  plt.xlabel("Day")
+
+  if ShowPreliminary:
+    fig.text(0.75, 0.25, 'PRELIMINARY',
+            fontsize=30, color='gray',
+            ha='right', va='bottom', alpha=0.5, rotation='30')
+
+  plt.tight_layout()
+  plt.savefig(savefolder + '/'+folder+'_fit.png')
+  if closeplot:
+    plt.close()
+
+
+def plot_fit(this_model, trace, new_cases, pop, settings, closeplot=True):
+  ShowPreliminary = settings['ShowPreliminary']
+  popname = pop['name']
+  savefolder, folder = get_folders(pop)
+    # inspect the chain realizations
+  trace.varnames
+  I_t = trace["new_detections"][:, None]
+  I_t = trace["new_cases"][:, None]
+  numpts = I_t.shape[0]
+  trimend = -10
+
+  I_t_05 = []
+  I_t_50 = []
+  I_t_95 = []
+  tx = np.arange(0,I_t.shape[2])
+  for t in tx:
+    a,b,c = np.percentile(I_t[:,0,t],[2.5,50,97.5])
+    I_t_05.append(a)
+    I_t_50.append(b)
+    I_t_95.append(c)
+
+  x_data = pd.date_range(start=this_model.data_begin, end=this_model.data_begin + datetime.timedelta(days=I_t.shape[2]-1) )
+  x_data_in = pd.date_range(start=this_model.data_begin, end=this_model.data_end)
+  x_sim = pd.date_range(start=this_model.sim_begin, end=this_model.sim_end )
+
+  shift = 0#7
+  x_data2 = pd.date_range(start=this_model.data_begin- datetime.timedelta(shift), end=this_model.data_begin + datetime.timedelta(days=I_t.shape[2]-1) )
+
+  fig, ax1 = plt.subplots()
+
+  for i in range(numpts):
+    ax1.plot(x_sim,I_t[i,:][0],alpha=0.3)
+    pass
+
+  plt.ylabel("Number of new cases reported")
+  ax1.plot(x_data_in, new_cases.values, 'b--', label="new cases data")
+
+  ax1.plot(x_sim,I_t_50, label="new cases model")
+  plt.legend()
+  plt.title("Model comparison to data %s" % popname)
+  plt.xticks(rotation=45)
+  plt.xlabel("Day")
+
+  if ShowPreliminary:
+    fig.text(0.75, 0.25, 'PRELIMINARY',
+            fontsize=30, color='gray',
+            ha='right', va='bottom', alpha=0.5, rotation='30')
+
+  plt.tight_layout()
+  plt.savefig(savefolder + '/'+folder+'_fit.png')
+  if closeplot:
+    plt.close()
+
+def plot_posteriors(this_model, trace, pop, settings):
+  # spreading rate fit
+  ShowPreliminary = settings['ShowPreliminary']
+  savefolder, folder = get_folders(pop)
+  pa = trace["pa"][:, None]
+  pu = trace["pu"][:, None]
+  I_t = trace["I_t"][:, None]
+
+  plt.figure()
+  #plt.subplot(1,2,1)
+  sns.distplot(pa, hist = False, kde = True,
+                bins=30,
+                kde_kws = {'shade': True, 'linewidth': 1,'cumulative': False},
+                label = '$p_a$').set(xlim=(0,1))
+
+  plt.xlabel("probability")
+  plt.ylabel("prob. density")
+  plt.title("Posterior asymptomatic probability")
+  plt.tight_layout()
+  plt.savefig(savefolder + '/'+folder+'_pa.png')
+  plt.close()
+
+  plt.figure()
+  sns.distplot(pu, hist = False, kde = True,
+                bins=30,
+                kde_kws = {'shade': True, 'linewidth': 1,'cumulative': False},
+                label = '$p_u$').set(xlim=(0,1))
+  plt.xlabel("probability")
+  plt.ylabel("prob. density")
+  plt.title("Posterior unreported probability")
+
+  plt.tight_layout()
+  plt.savefig(savefolder + '/'+folder+'_pu.png')
+  plt.close()
+
+  plt.figure()
+  if "mu" in trace:
+    mu = trace["mu"][:, None]
+    plt.plot(1/mu, 'k-')
+  if "mus" in trace:
+    mus = trace["mus"][:, None]
+    plt.plot(1/mus, 'k--')
+  if "gamma" in trace:
+    gamma = trace["gamma"][:, None]
+    plt.plot(1/gamma, 'g-')
+
+  lambda_t, x = cov19.plot._get_array_from_trace_via_date(this_model, trace, "lambda_t")
+
+  y = lambda_t[:, :]
+
+  l_t_05 = []
+  l_t_50 = []
+  l_t_95 = []
+  #print (lambda_t.shape[1])
+  tx = np.arange(0,y.shape[1])
+  for t in tx:
+    a,b,c = np.percentile(y[:,t],[2.5,50,97.5])
+    l_t_05.append(a)
+    l_t_50.append(b)
+    l_t_95.append(c)
+
+  plt.figure()
+  plt.plot(x,l_t_50, label="lambda")
+  plt.fill_between(x,l_t_05,l_t_95,lw=0,alpha=0.1, label="95CI")
+
+  plt.xticks(rotation=45)
+  plt.xlabel("Day")
+  plt.title("Probability infectious person will infect someone else in a day ($\lambda$)")
+
+  plt.tight_layout()
+  plt.savefig(savefolder + '/'+folder+'_lambda.png')
+  plt.close()
+
+
+# This code needs major cleanup
+
+def plot_prevalence(this_model, trace, pop, settings, closeplot=True): #closeplot=False
+  # this is the infected asymptomatic AND symptimatic
+  ShowPreliminary = settings['ShowPreliminary']
+  popname = pop['name']
+  savefolder, folder = get_folders(pop)
+  trimend = -1#-25
+  trimstart=0
+  N = this_model.N_population
+  E_t = trace["E_t"][:, None]
+  R_t = trace["R_t"][:, None]
+  I_t = trace["I_t"][:, None] 
+  lambda_t, x = cov19.plot._get_array_from_trace_via_date(this_model, trace, "lambda_t")
+  p0 = 100.0*I_t/N * lambda_t
+  Ip_t = I_t + E_t + R_t
+
+  I_t_05 = []
+  I_t_50 = []
+  I_t_95 = []
+  tx = np.arange(0,I_t.shape[2])
+
+  for t in tx:
+    a,b,c = np.percentile(100*I_t[:,0,t]/N,[2.5,50,97.5])
+    if a < 0:
+      a = 0
+    if b < 0:
+      b = 0
+    if c < 0:
+      c = 0
+    I_t_05.append(a)
+    I_t_50.append(b)
+    I_t_95.append(c)
+
+  Ip_t_05 = []
+  Ip_t_50 = []
+  Ip_t_95 = []
+  tx = np.arange(0,Ip_t.shape[2])
+
+  for t in tx:
+    a,b,c = np.percentile(100*Ip_t[:,0,t]/N,[2.5,50,97.5])
+    if a < 0:
+      a = 0
+    if b < 0:
+      b = 0
+    if c < 0:
+      c = 0
+    Ip_t_05.append(a)
+    Ip_t_50.append(b)
+    Ip_t_95.append(c)
+
+  p_t_05 = []
+  p_t_50 = []
+  p_t_95 = []
+  tx = np.arange(0,p0.shape[2])
+  N = this_model.N_population
+  for t in tx:
+    a,b,c = np.percentile(p0[:,0,t],[2.5,50,97.5])
+    if a < 0:
+      a = 0
+    if b < 0:
+      b = 0
+    if c < 0:
+      c = 0
+    p_t_05.append(a)
+    p_t_50.append(b)
+    p_t_95.append(c)
+
+  Ia_t = trace["Ia_t"][:, None]
+  Ia_t_05 = []
+  Ia_t_50 = []
+  Ia_t_95 = []
+  tx = np.arange(0,Ia_t.shape[2])
+  for t in tx:
+    #a,b,c = np.percentile(100*Ia_t[:,0,t]/N,[5,50,95])
+    a,b,c = np.percentile(Ia_t[:,0,t],[2.5,50,97.5])
+    if a < 0:
+      a = 0
+    if b < 0:
+      b = 0
+    if c < 0:
+      c = 0
+    Ia_t_05.append(a)
+    Ia_t_50.append(b)
+    Ia_t_95.append(c)
+
+  Is_t = trace["Is_t"][:, None]
+  Is_t_05 = []
+  Is_t_50 = []
+  Is_t_95 = []
+  tx = np.arange(0,Is_t.shape[2])
+  for t in tx:
+    #a,b,c = np.percentile(100*Is_t[:,0,t]/N,[5,50,95])
+    a,b,c = np.percentile(Is_t[:,0,t],[2.5,50,97.5])
+    if a < 0:
+      a = 0
+    if b < 0:
+      b = 0
+    if c < 0:
+      c = 0
+    Is_t_05.append(a)
+    Is_t_50.append(b)
+    Is_t_95.append(c)
+
+  x_data = pd.date_range(start=this_model.data_begin,                             end=this_model.data_begin + datetime.timedelta(days=I_t.shape[2]-1) )
+  x_sim = pd.date_range(start=this_model.sim_begin, end=this_model.sim_end )
+
+  shift = 0#5#7
+  x_data2 = pd.date_range(start=this_model.data_begin- datetime.timedelta(shift), end=this_model.data_begin + datetime.timedelta(days=I_t.shape[2]-1) )
+
+
+  fig, ax1 = plt.subplots()
+  plt.plot(x_sim,Ip_t_50, label="Prevalence")
+  plt.fill_between(x_sim,Ip_t_05,Ip_t_95,lw=0,alpha=0.1, label="95CI")
+  maxy = np.max(Ip_t_95)
+  plt.plot([datetime.datetime.today(), datetime.datetime.today()], [0,maxy],'r-', label="Today")
+  plt.ylabel("%")
+  plt.xticks(rotation=45)
+  plt.title("Prevalence (E+I+Q) of COVID-19 \n %s, pop. = %s" % (popname, N))
+  plt.xlabel("Date")
+  start, end = ax1.get_ylim()
+  locs, labels = plt.yticks()
+
+  ax2 = ax1.twinx()
+  ax2.set_ylim(start,end)
+  labs = ["%d" % (N*l/100.0) for l in locs]
+  ax2.set_yticklabels(labs)
+  ax2.grid(False)
+  plt.ylabel("# of infections")
+  ax1.legend()
+
+  if ShowPreliminary:
+    fig.text(0.75, 0.25, 'PRELIMINARY',
+            fontsize=30, color='gray',
+            ha='right', va='bottom', alpha=0.5, rotation='30')
+
+  plt.tight_layout()
+  plt.savefig(savefolder + '/'+folder+'_prev.png')
+  if closeplot:
+    plt.close()
+
+  fig, ax1 = plt.subplots()
+  plt.plot(x_sim,I_t_50, label="Prevalence")
+  plt.fill_between(x_sim,I_t_05,I_t_95,lw=0,alpha=0.1, label="95CI")
+  plt.title("Infectious prevalence ($I$)\n %s, pop. = %s" % (popname, N))
+  plt.ylabel("%")
+  plt.xlabel("Date")
+  plt.xticks(rotation=45)
+  start, end = ax1.get_ylim()
+  locs, labels = plt.yticks()
+  ax2 = ax1.twinx()
+  ax2.set_ylim(start,end)
+  labs = ["%d" % (N*l/100.0) for l in locs]
+  ax2.set_yticklabels(labs)
+  ax2.grid(False)
+  plt.ylabel("# of infections")
+  ax1.legend()
+
+  maxy = np.max(I_t_95)
+  plt.plot([datetime.datetime.today(), datetime.datetime.today()], [0,maxy],'r-', label="Today")
+
+  if ShowPreliminary:
+    fig.text(0.75, 0.25, 'PRELIMINARY',
+            fontsize=30, color='gray',
+            ha='right', va='bottom', alpha=0.5, rotation='30')
+
+  plt.tight_layout()
+  plt.savefig(savefolder + '/'+folder+'_prev_i.png')
+  if closeplot:
+    plt.close()
+
+  fig, ax1 = plt.subplots()
+  plt.plot(x_sim,p_t_50, label="Prevalence")
+  plt.fill_between(x_sim,p_t_05,p_t_95,lw=0,alpha=0.1, label="95CI")
+  plt.title("Infectious prevalence times probability of infecting ($p_0$)\n %s, pop. = %s" % (popname, N))
+  plt.ylabel("$p_0$ (%)");
+  plt.xlabel("Date")
+  plt.xticks(rotation=45);
+
+  maxy = np.max(p_t_95)
+  plt.plot([datetime.datetime.today(), datetime.datetime.today()], [0,maxy],'r-', label="Today")
+
+  if ShowPreliminary:
+    fig.text(0.75, 0.25, 'PRELIMINARY',
+            fontsize=30, color='gray',
+            ha='right', va='bottom', alpha=0.5, rotation='30')
+
+  plt.tight_layout()
+  plt.savefig(savefolder + '/'+folder+'_p0.png')
+  if closeplot:
+    plt.close()
+
+  # Sym and asym
+  fig, ax1 = plt.subplots()
+
+  plt.plot(x_sim,Ia_t_50, label="Asymptomatic or undetected")
+  plt.fill_between(x_sim,Ia_t_05,Ia_t_95,lw=0,alpha=0.1, label="95CI")
+
+  plt.plot(x_sim,Is_t_50, label="Presymptomatic")
+  plt.fill_between(x_sim,Is_t_05,Is_t_95,lw=0,alpha=0.1, label="95CI")
+
+  plt.ylabel("# of infections");
+  plt.xticks(rotation=45)
+  plt.title("Prevalence of COVID-19 \n %s" % popname)
+  plt.legend()
+  plt.xlabel("Date")
+
+  if ShowPreliminary:
+    fig.text(0.75, 0.25, 'PRELIMINARY',
+            fontsize=30, color='gray',
+            ha='right', va='bottom', alpha=0.5, rotation='30')
+
+  plt.tight_layout()
+  plt.savefig(savefolder + '/'+folder+'_a_s.png')
+  if closeplot:
+    plt.close()
+
+  I_t_05 = []
+  I_t_50 = []
+  I_t_95 = []
+  trimend = -1
+  trimstart = -45#60
+  tx = np.arange(0,I_t.shape[2])
+  #N = 36e6
+  for t in tx:
+    a,b,c = np.percentile(I_t[:,0,t],[2.5,50,97.5])
+    if a < 0:
+      a = 0
+    if b < 0:
+      b = 0
+    if c < 0:
+      c = 0
+    I_t_05.append(a)
+    I_t_50.append(b)
+    I_t_95.append(c)
+
+  fig = plt.figure()
+  plt.plot(x_sim[trimstart:trimend],I_t_50[trimstart:trimend], label="Prevalence")
+  plt.fill_between(x_sim[trimstart:trimend],I_t_05[trimstart:trimend],I_t_95[trimstart:trimend],lw=0,alpha=0.1, label="95CI")
+  maxy = np.max(I_t_95[trimstart:trimend])
+  plt.plot([datetime.datetime.today(), datetime.datetime.today()], [0,maxy],'r-', label="Today")
+  #plt.yscale('log')
+  #plt.ylim((0,10))
+  plt.xticks(rotation=45)
+  plt.title("Prevalence of COVID-19 \n %s" % popname)
+  plt.legend()
+  plt.xlabel("Date")
+  plt.ylabel("# undetected infections")
+
+  if ShowPreliminary:
+    fig.text(0.75, 0.25, 'PRELIMINARY',
+            fontsize=30, color='gray',
+            ha='right', va='bottom', alpha=0.5, rotation='30')
+
+  plt.tight_layout()
+  plt.savefig(savefolder + '/'+folder+'_predict.png')
+  if closeplot:
+    plt.close()
+
+def plot_IFR(this_model, trace, pop, settings, cum_deaths):
+  # this is the infected asymptomatic AND symptimatic
+  ShowPreliminary = settings['ShowPreliminary']
+  popname = pop['name']
+  savefolder, folder = get_folders(pop)
+  # IFR estimate
+  death_t = np.array(cum_deaths)
+  #print(death_t)
+  trimend = -1  
+  shift = 0
+  Ecum_t = trace["Ecum_t"][:, None]
+
+  #print(cum_deaths.index[0])
+  #print(cum_deaths.index.shape)
+
+  deathdelay = 0#13   # https://www.medrxiv.org/content/10.1101/2020.03.05.20031773v2.full.pdf
+
+  Ecum_t = Ecum_t[:,:,deathdelay:cum_deaths.index.shape[0]+deathdelay]
+
+  Ecum_t_05 = []
+  Ecum_t_50 = []
+  Ecum_t_95 = []
+  tx = np.arange(0,Ecum_t.shape[2])
+  for t in tx:
+    a,b,c = np.percentile(100*death_t[t]/Ecum_t[:,0,t],[2.5,50,97.5])
+    if a < 0:
+      a = 0
+    Ecum_t_05.append(a)
+    Ecum_t_50.append(b)
+    Ecum_t_95.append(c)
+
+  x_data2 = pd.date_range(start=this_model.data_begin, end=this_model.data_begin + datetime.timedelta(days=Ecum_t.shape[2]-1) )
+  #print(Ecum_t.shape[2]-1)
+  fig, ax1 = plt.subplots()
+  trimstart = 14
+  plt.plot(x_data2[trimstart:trimend-shift],Ecum_t_50[trimstart:trimend], label="Infected")
+  plt.fill_between(x_data2[trimstart:trimend-shift],Ecum_t_05[trimstart:trimend],Ecum_t_95[trimstart:trimend],lw=0,alpha=0.1, label="95CI")
+
+  x_data3 = pd.date_range(start=cum_deaths.index[0],end=cum_deaths.index[-1])
+
+  plt.title("Running Estimate of IFR: %s" % popname)
+  plt.xlabel("Date")
+  plt.xticks(rotation=45)
+  plt.ylabel("IFR (%)")
+
+  if ShowPreliminary:
+    fig.text(0.75, 0.25, 'PRELIMINARY',
+            fontsize=30, color='gray',
+            ha='right', va='bottom', alpha=0.5, rotation='30')
+
+
+  plt.tight_layout()
+  plt.savefig(savefolder + '/'+folder+'_running_IFR.png')
+  plt.close()
+
+  plt.figure()
+  values = 100*death_t[-1]/Ecum_t[:,0,-1]
+  #print (values)
+  sns.distplot(values, hist = False, kde = True,
+                bins=30,
+                kde_kws = {'shade': True, 'linewidth': 1,'cumulative': False},
+                label = 'IFR')#.set(xlim=(0,1))
+  plt.title("Estimated IFR")
+  plt.xlabel("%")
+  plt.ylabel("prob. density")
+
+  plt.tight_layout()
+  plt.savefig(savefolder + '/'+folder+'_IFR.png')
+
+  plt.close()
