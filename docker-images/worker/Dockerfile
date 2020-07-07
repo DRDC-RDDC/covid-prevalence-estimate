@@ -8,6 +8,8 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends apt-utils \
     && apt-get install -y --no-install-recommends g++ \
     && apt-get install -y --no-install-recommends libopenblas-dev \
+    && apt-get install -y --no-install-recommends libblas-dev \
+    && apt-get install -y --no-install-recommends liblapack-dev \
     && apt-get install -y --no-install-recommends gnutls-bin \
     && apt-get install -y --no-install-recommends git \
     && apt-get purge -y --auto-remove \

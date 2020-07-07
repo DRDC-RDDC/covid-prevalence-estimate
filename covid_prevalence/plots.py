@@ -25,8 +25,12 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 from . import utility as ut
+import logging
+
+log = logging.getLogger(__name__)
 
 def plot_data(this_model, new_cases, pop, settings, closeplot=True):
+  log.info('Plotting Data')
   ShowPreliminary = settings['ShowPreliminary']
   popname = pop['name']
 
@@ -62,6 +66,7 @@ def plot_data(this_model, new_cases, pop, settings, closeplot=True):
 
 
 def plot_fit(this_model, trace, new_cases, pop, settings, closeplot=True):
+  log.info('Plotting Fit')
   ShowPreliminary = settings['ShowPreliminary']
   popname = pop['name']
   savefolder, folder = ut.get_folders(pop)
@@ -110,9 +115,12 @@ def plot_fit(this_model, trace, new_cases, pop, settings, closeplot=True):
             ha='right', va='bottom', alpha=0.5, rotation='30')
 
   plt.tight_layout()
-  plt.savefig(savefolder + '/'+folder+'_fit.png')
+  savepath = savefolder + '/'+folder+'_fit.png'
+  plt.savefig(savepath)
   if closeplot:
     plt.close()
+
+  log.info('Fit plot saved to %s' % savepath)
 
 def plot_posteriors(this_model, trace, pop, settings):
   # spreading rate fit

@@ -33,6 +33,10 @@ plt.style.use('seaborn-darkgrid')
 logging.basicConfig(level=logging.INFO, 
     format="%(asctime)s %(levelname)-8s [%(name)s] %(message)s",
     datefmt='%Y-%m-%d %H:%M:%S')
+
+pymc3logger = logging.getLogger('pymc3')
+pymc3logger.setLevel(logging.DEBUG)
+
 log = logging.getLogger(__name__)
 
 # These are (optionally) configurable values via environment variables
@@ -170,6 +174,7 @@ if __name__=='__main__':
 
         # apply a weekly modulation, fewer reports during weekends
         if 'noweekmod' in pop and pop['noweekmod']:
+          log.info('Not using weekly modulation')
           new_cases_inferred_tr = pm.Deterministic("new_cases", new_cases_inferred_raw)
           new_cases_inferred = new_cases_inferred_raw
         else:
@@ -198,6 +203,7 @@ if __name__=='__main__':
       if pop['run'] == False:
         plot_data(this_model, new_cases, pop, settings)
       else:
+        log.info('Starting sampling')
         trace = pm.sample(
           model=this_model, 
           tune=numtune, 
@@ -208,15 +214,20 @@ if __name__=='__main__':
       # TODO: check if advi did not converge (bad model fit)
 
       if pop['run'] == True:
+        log.info('Generating plots')
         plot_fit(this_model, trace, new_cases, pop, settings)
         plot_posteriors(this_model, trace, pop, settings)
         plot_prevalence(this_model, trace, pop, settings)
         plot_IFR(this_model, trace, pop, settings, cum_deaths)
         #dft, dfn = savecsv(this_model, trace, pop)
+        log.info('Updating CSV files')
         _, _ = covprev.data.savecsv(this_model, trace, pop)
 
       try:
-        gitpush("Updates for " + popname)
+        log.info('Pushing to git')
+        gitpush("Updates for " + popname, 
+          repo_path=repo_path,
+          repo_branch=worker_branch)
       except:
         log.error("Error pushing")
 
