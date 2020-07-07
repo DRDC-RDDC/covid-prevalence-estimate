@@ -10,7 +10,12 @@ spec:
     spec:
       containers:
       - name: covprev-work
-        image: covprev-work
-        imagePullPolicy: Never
+        image: 979276261708.dkr.ecr.ca-central-1.amazonaws.com/covprev-work:latest
+        imagePullPolicy: Always
+        resources:
+          limits:
+            cpu: "4"
+          requests:
+            cpu: "4"
       restartPolicy: Never
 
