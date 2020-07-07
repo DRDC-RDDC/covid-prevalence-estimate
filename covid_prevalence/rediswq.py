@@ -53,20 +53,27 @@ class RedisWQ(object):
         """
         return self._main_qsize() == 0 and self._processing_qsize() == 0
 
-# TODO: implement this
-#    def check_expired_leases(self):
-#        """Return to the work queueReturn True if the queue is empty, False otherwise."""
-#        # Processing list should not be _too_ long since it is approximately as long
-#        # as the number of active and recently active workers.
-#        processing = self._db.lrange(self._processing_q_key, 0, -1)
-#        for item in processing:
-#          # If the lease key is not present for an item (it expired or was 
-#          # never created because the client crashed before creating it)
-#          # then move the item back to the main queue so others can work on it.
-#          if not self._lease_exists(item):
-#            TODO: transactionally move the key from processing queue to
-#            to main queue, while detecting if a new lease is created
-#            or if either queue is modified.
+    def check_expired_leases(self):
+        """Return to the work queueReturn True if the queue is empty, False otherwise."""
+        # Processing list should not be _too_ long since it is approximately as long
+        # as the number of active and recently active workers.
+        processing = self._db.lrange(self._processing_q_key, 0, -1)
+        for item in processing:
+          # If the lease key is not present for an item (it expired or was 
+          # never created because the client crashed before creating it)
+          # then move the item back to the main queue so others can work on it.
+          if not self._lease_exists(item):
+              # transactionally move the key from processing queue to
+              # to main queue, while detecting if a new lease is created
+              # or if either queue is modified.
+
+              # This is not ideal - if multiple calls, it can lead to double-queueing the item
+              
+              # remove from processing
+              self._db.lrem(self._processing_q_key, 0, item)
+
+              # put it back in the queue (if somehow leased again, it will not re-queue)
+              queued = self.enqueue(item)
 
     def _itemkey(self, item):
         """Returns a string that uniquely identifies an item (bytes)."""
@@ -80,7 +87,11 @@ class RedisWQ(object):
         """Put an item into the queue for processing
         """
         if item:
-            self._db.rpush(self._main_q_key, item)
+            if self._lease_exists(item):
+                return False
+            else:
+                self._db.rpush(self._main_q_key, item)
+                return True
 
     def lease(self, lease_secs=60, block=True, timeout=None):
         """Begin working on an item the work queue. 
