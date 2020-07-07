@@ -228,8 +228,8 @@ if __name__=='__main__':
         gitpush("Updates for " + popname, 
           repo_path=repo_path,
           repo_branch=worker_branch)
-      except:
-        log.error("Error pushing")
+      except Exception as e:
+        log.error("Error pushing. " + str(e))
 
       # Mark as completed and remove from work queue.
       q.complete(item)
