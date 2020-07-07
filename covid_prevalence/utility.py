@@ -18,3 +18,32 @@
     The author can be contacted at steven.horn@forces.gc.ca
 '''
 
+import numpy as np
+from pathlib import Path
+
+def get_folders(pop):
+  folder = pop["source_country"] + pop["source_state"] + ("" if pop["source_region"] == None else pop["source_region"])
+  folder = folder.replace(' ','')
+  savefolder = '/content/covid-prevalence/results/latest/' + folder
+  Path(savefolder).mkdir(parents=True, exist_ok=True)
+  return savefolder,folder
+
+def get_percentile_timeseries(X_t, islambda=False):
+  X_t_05 = []
+  X_t_50 = []
+  X_t_95 = []
+  ix = 2
+  if islambda:
+    ix = 1
+  tx = np.arange(0,X_t.shape[ix])
+
+  for t in tx:
+    if islambda:
+      a,b,c = np.percentile(X_t[:,t],[2.5,50,97.5])
+    else:
+      a,b,c = np.percentile(X_t[:,0,t],[2.5,50,97.5])
+    X_t_05.append(a)
+    X_t_50.append(b)
+    X_t_95.append(c)
+  
+  return np.array(X_t_05), np.array(X_t_50), np.array(X_t_95)
