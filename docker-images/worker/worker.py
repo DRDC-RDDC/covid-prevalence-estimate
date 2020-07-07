@@ -17,7 +17,7 @@ from datetime import timezone
 from dateutil.parser import parse, isoparse
 from pathlib import Path
 from covid_prevalence.models import SEIRa     # Our model
-from covid_prevalence.data import savecsv
+import covid_prevalence as covprev
 from covid_prevalence.plots import plot_data, plot_fit, plot_IFR, plot_posteriors, plot_prevalence
 from covid_prevalence._repository import gitpush
 
@@ -213,7 +213,7 @@ if __name__=='__main__':
         plot_prevalence(this_model, trace, pop, settings)
         plot_IFR(this_model, trace, pop, settings, cum_deaths)
         #dft, dfn = savecsv(this_model, trace, pop)
-        _, _ = savecsv(this_model, trace, pop)
+        _, _ = covprev.data.savecsv(this_model, trace, pop)
 
       try:
         gitpush("Updates for " + popname)

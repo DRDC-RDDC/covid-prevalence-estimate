@@ -26,7 +26,7 @@ import os
 import pandas as pd
 from utility import get_folders, get_percentile_timeseries
 
-def savecsv(this_model, trace,pop):
+def savecsv(this_model, trace, pop):
   analysis_date = datetime.datetime.utcnow()
   _, folder = get_folders(pop)
   hr_uid = 0

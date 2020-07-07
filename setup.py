@@ -24,7 +24,7 @@ setup(
     author="Steven Horn",
     author_email="steven@horn.work",
     packages=find_namespace_packages(),
-    url="https://gitlab.com/stevenhorn/covid-prevalence/",
+    url="https://gitlab.com/stevenhorn/covid-prevalence-estimate/",
     description="Bayesian estimation of COVID point prevalence",
     long_description=long_description,
     long_description_content_type="text/markdown",
