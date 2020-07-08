@@ -125,13 +125,16 @@ if __name__=='__main__':
     log.error(str(e))
 
   # run the processing loop - if the queue is empty, then this program will end
-  while not q.empty():
+  timed_out = False
+  num_wait_loops = 0
+  while not timed_out and not q.empty():
 
     # This sets up a loop to get data from the queue.  Continues if 
     # 30 seconds has elapsed - logging a waiting message.
-    item = q.lease(lease_secs=timelimit, block=True, timeout=30)
+    item = q.lease(lease_secs=timelimit, block=True, timeout=60)
 
     if item is not None:
+      num_wait_loops = 0
       itemstr = item.decode("utf-8")
 
       log.debug("Recieved task " + itemstr)
@@ -274,31 +277,52 @@ if __name__=='__main__':
         except Exception as e:
           log.error(str(e))
 
-      try:
-        message = "Updates for " + pop['name']
-        log.info('Pulling from git prior to pushing')
+      # We try to push the results to git
+      numpushattempts = 0
+      success = False
+      while not success and numpushattempts < 6:
+        numpushattempts = numpushattempts + 1
         try:
-          # we need to commit our changes before pulling
-          repo.git.add('--all')
-          repo.git.commit('-m', message, author='Steven Horn')
+          log.info('Trying to commit.  Attempt %d' % numpushattempts)
+          message = "Updates for " + pop['name']
           
-          # the merge should be seamless
-          res = repo.remotes.origin.pull(worker_branch)
-        except git.GitCommandError as e:
-          log.error(str(e))
+          try:
+            log.info('Local commit prior to pulling')
+            # we need to commit our changes before pulling
+            repo.git.add('--all')
+            repo.git.commit('-m', message, author='Steven Horn')
+          except git.GitCommandError as e:
+            log.error(str(e))
 
-        log.info('Pushing to git')
-        gitpush(message, 
-          repo_path=repo_path,
-          repo_branch=worker_branch)
-      except Exception as e:
-        log.error("Error pushing. " + str(e))
+          try:
+            log.info('Pulling from git prior to pushing')
+            # the merge should be seamless
+            res = repo.remotes.origin.pull(worker_branch)
+          except git.GitCommandError as e:
+            log.error(str(e))
+
+          log.info('Pushing branch %s to origin' % worker_branch)
+          repo.remotes.origin.push(worker_branch)
+          success = True
+        except Exception as e:
+          log.error("Error pushing. " + str(e))
+          # Wait before trying again to avoid hammering git
+          time.sleep(30)
+      
+      if not success:
+        log.error('Unable to commit %s' % pop['name'])
 
       # Mark as completed and remove from work queue.
       q.complete(item)
       log.info("Completed " + pop['name'])
     else:
+      num_wait_loops = num_wait_loops + 1
       log.info("Waiting for work")
+
+      if num_wait_loops > 20:  # minutes
+        # this will break the loop and exit the program
+        timed_out = True
+        
       # q.check_expired_leases()
 
   log.info("Worker queue empty, exiting")
