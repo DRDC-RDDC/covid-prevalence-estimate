@@ -3,7 +3,7 @@ kind: Job
 metadata:
   name: covprev-work
 spec:
-  parallelism: 4
+  parallelism: 15
   template:
     metadata:
       name: covprev-work
@@ -12,4 +12,9 @@ spec:
       - name: covprev-work
         image: 979276261708.dkr.ecr.ca-central-1.amazonaws.com/covprev-work:latest
         imagePullPolicy: Always
+        resources:
+          limits:
+            cpu: "8"
+          requests:
+            cpu: "7.8"
       restartPolicy: Never

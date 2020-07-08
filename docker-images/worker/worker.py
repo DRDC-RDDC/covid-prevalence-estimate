@@ -88,6 +88,13 @@ if __name__=='__main__':
   log.info("Worker with sessionID: " +  q.sessionID())
   log.info("Initial queue state: empty=" + str(q.empty()))
 
+  # Clone this for the hr_map.csv needed to save csv file
+  #  todo - make this more seamless so that the whole repo isn't needed.
+  repo_ishaberry = git.Repo.clone_from("https://github.com/ishaberry/Covid19Canada.git", 
+        "/content/Covid19Canada", 
+        depth=1,
+        branch="master")
+
   # Clone the repository which will recieve the output
   repo_origin_path = "https://oauth2:"+ oauth +"@gitlab.com/stevenhorn/covid-prevalence.git"
   log.info("cloning repository from %s" % repo_origin_path)
@@ -262,18 +269,26 @@ if __name__=='__main__':
         plot_IFR(this_model, trace, pop, settings, cum_deaths)
         #dft, dfn = savecsv(this_model, trace, pop)
         log.info('Updating CSV files')
-        _, _ = covprev.data.savecsv(this_model, trace, pop)
+        try:
+          _, _ = covprev.data.savecsv(this_model, trace, pop)
+        except Exception as e:
+          log.error(str(e))
 
       try:
-        
+        message = "Updates for " + pop['name']
         log.info('Pulling from git prior to pushing')
         try:
+          # we need to commit our changes before pulling
+          repo.git.add('--all')
+          repo.git.commit('-m', message, author='Steven Horn')
+          
+          # the merge should be seamless
           res = repo.remotes.origin.pull(worker_branch)
         except git.GitCommandError as e:
           log.error(str(e))
 
         log.info('Pushing to git')
-        gitpush("Updates for " + pop['name'], 
+        gitpush(message, 
           repo_path=repo_path,
           repo_branch=worker_branch)
       except Exception as e:
