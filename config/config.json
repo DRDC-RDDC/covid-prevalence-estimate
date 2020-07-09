@@ -18,8 +18,8 @@
     "sym_recover_mu_sigma": 1.75
   },
   "settings": {
-    "numsims": 50,
-    "numtune": 200,
+    "numsims": 10,
+    "numtune": 10,
     "ShowPreliminary": true
   },
   "populations": [
