@@ -108,6 +108,9 @@ if __name__=='__main__':
   repo.config_writer().set_value("user", "name", "Steven Horn").release()
   repo.config_writer().set_value("user", "email", "steven@horn.work").release()
 
+
+  repo.config_writer().set_value("mergetool", "keepBackup", "false").release()
+
   # we will work on a different branch
   worker_branch = 'latest-' + datetime.datetime.utcnow().strftime('%y%m%d')
   repo.git.checkout('-b', worker_branch)
@@ -281,7 +284,7 @@ if __name__=='__main__':
       regionid = pop["source_country"] + pop["source_state"] + ("" if pop["source_region"] == None else pop["source_region"])
       regionid = regionid.replace(' ','')  # regionid = 'USColoradoElPaso'
 
-      message = "Updates for " + pop['name']
+      message = "Updates for " + pop['name'] # message = "Updates for " + regionid
       try:
         log.info('Local commit prior to pulling')
         repo.git.checkout('-b', worker_branch + '_' + regionid)
@@ -305,19 +308,27 @@ if __name__=='__main__':
             res = repo.remotes.origin.pull(worker_branch)
           except git.GitCommandError as e:
             log.error(str(e))
-
+            
           try:
             log.info('Merging...')
             # we should now be on the newest branch - so we merge our result in
             #repo.git.merge('-s','recursive','-X','theirs', worker_branch + '_' + regionid)
-            
             # there really shouldn't be conflicts.
             repo.git.merge('-s','recursive', worker_branch + '_' + regionid)
           except Exception as e:
             log.error(str(e))
-            repo.git.merge('--abort')
-            log.info('using recursive theirs as backup.')
-            repo.git.merge('-s','recursive','-X','theirs', worker_branch + '_' + regionid)
+
+            # Try auto-resolve
+            try:
+              log.info('Attempting to auto-resolve conflict(s)')
+              repo.git.mergetool()
+              repo.git.commit('-am', "merged " + message)
+              log.info('Autoresolve succeeded.')
+            except Exception as e:
+              log.error(str(e))
+              repo.git.merge('--abort')
+              log.info('using recursive theirs as backup.')
+              repo.git.merge('-s','recursive','-X','theirs', worker_branch + '_' + regionid)
 
           log.info('Pushing branch %s to origin' % worker_branch)
           repo.remotes.origin.push(worker_branch)
