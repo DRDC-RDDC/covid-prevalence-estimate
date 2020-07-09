@@ -18,8 +18,8 @@
     "sym_recover_mu_sigma": 1.75
   },
   "settings": {
-    "numsims": 10,
-    "numtune": 10,
+    "numsims": 100,
+    "numtune": 300,
     "ShowPreliminary": true
   },
   "populations": [
@@ -104,7 +104,7 @@
       "pr_delay_mean_of_median": 5,
       "pr_mean_weekend_factor": 0.1,
       "pr_sigma_weekend_factor": 2,
-      "run": false,
+      "run": true,
       "date_start": "2020-03-20T00:00:00"
     },
     {
@@ -125,7 +125,7 @@
       "pr_mean_weekend_factor": 0.1,
       "pr_sigma_weekend_factor": 2,
       "noweekmod": true,
-      "run": false,
+      "run": true,
       "date_start": "2020-03-20T00:00:00"
     },
     {
@@ -146,7 +146,7 @@
       "pr_mean_weekend_factor": 0.1,
       "pr_sigma_weekend_factor": 2,
       "noweekmod": true,
-      "run": false,
+      "run": true,
       "date_start": "2020-03-20T00:00:00"
     },
     {
@@ -166,7 +166,7 @@
       "pr_delay_mean_of_median": 5,
       "pr_mean_weekend_factor": 0.1,
       "pr_sigma_weekend_factor": 2,
-      "run": false,
+      "run": true,
       "date_start": "2020-03-20T00:00:00"
     },
     {
@@ -187,7 +187,7 @@
       "pr_mean_weekend_factor": 0.1,
       "pr_sigma_weekend_factor": 2,
       "noweekmod": true,
-      "run": false,
+      "run": true,
       "date_start": "2020-03-20T00:00:00"
     },
     {
@@ -373,7 +373,7 @@
       "pr_delay_mean_of_median": 3,
       "pr_mean_weekend_factor": 0.4,
       "pr_sigma_weekend_factor": 1,
-      "run": false,
+      "run": true,
       "date_start": "2020-03-14T00:00:00"
     },
     {
@@ -393,7 +393,7 @@
       "pr_delay_mean_of_median": 3,
       "pr_mean_weekend_factor": 0.4,
       "pr_sigma_weekend_factor": 1,
-      "run": false,
+      "run": true,
       "date_start": "2020-03-14T00:00:00"
     },
     {
@@ -413,7 +413,7 @@
       "pr_delay_mean_of_median": 3,
       "pr_mean_weekend_factor": 0.4,
       "pr_sigma_weekend_factor": 1,
-      "run": false,
+      "run": true,
       "date_start": "2020-03-14T00:00:00"
     },
     {
@@ -433,7 +433,7 @@
       "pr_delay_mean_of_median": 3,
       "pr_mean_weekend_factor": 0.4,
       "pr_sigma_weekend_factor": 1,
-      "run": false,
+      "run": true,
       "date_start": "2020-03-14T00:00:00"
     },
     {
@@ -454,7 +454,7 @@
       "pr_mean_weekend_factor": 0.4,
       "pr_sigma_weekend_factor": 1,
       "noweekmod": true,
-      "run": false,
+      "run": true,
       "date_start": "2020-03-14T00:00:00"
     },
     {
@@ -475,7 +475,7 @@
       "pr_mean_weekend_factor": 0.4,
       "pr_sigma_weekend_factor": 1,
       "noweekmod": true,
-      "run": false,
+      "run": true,
       "date_start": "2020-03-14T00:00:00"
     },
     {
@@ -496,7 +496,7 @@
       "pr_mean_weekend_factor": 0.4,
       "pr_sigma_weekend_factor": 1,
       "noweekmod": true,
-      "run": false,
+      "run": true,
       "date_start": "2020-03-14T00:00:00"
     },
     {
@@ -517,7 +517,7 @@
       "pr_mean_weekend_factor": 0.4,
       "pr_sigma_weekend_factor": 1,
       "noweekmod": true,
-      "run": false,
+      "run": true,
       "date_start": "2020-03-14T00:00:00"
     },
     {
@@ -537,7 +537,7 @@
       "pr_delay_mean_of_median": 3,
       "pr_mean_weekend_factor": 0.4,
       "pr_sigma_weekend_factor": 1,
-      "run": false,
+      "run": true,
       "date_start": "2020-03-14T00:00:00"
     },
     {
@@ -558,7 +558,7 @@
       "pr_mean_weekend_factor": 0.4,
       "pr_sigma_weekend_factor": 1,
       "noweekmod": true,
-      "run": false,
+      "run": true,
       "date_start": "2020-03-14T00:00:00"
     },
     {
@@ -578,7 +578,7 @@
       "pr_delay_mean_of_median": 7,
       "pr_mean_weekend_factor": 0.4,
       "pr_sigma_weekend_factor": 1,
-      "run": false,
+      "run": true,
       "date_start": "2020-03-14T00:00:00"
     },
     {
@@ -599,7 +599,7 @@
       "pr_mean_weekend_factor": 0.4,
       "pr_sigma_weekend_factor": 1,
       "noweekmod": true,
-      "run": false,
+      "run": true,
       "date_start": "2020-03-14T00:00:00"
     },
     {
@@ -620,7 +620,7 @@
       "pr_mean_weekend_factor": 0.4,
       "pr_sigma_weekend_factor": 1,
       "noweekmod": true,
-      "run": false,
+      "run": true,
       "date_start": "2020-03-14T00:00:00"
     },
     {
@@ -641,7 +641,7 @@
       "pr_mean_weekend_factor": 0.4,
       "pr_sigma_weekend_factor": 1,
       "noweekmod": true,
-      "run": false,
+      "run": true,
       "date_start": "2020-03-14T00:00:00"
     },
     {
@@ -662,7 +662,7 @@
       "pr_mean_weekend_factor": 0.4,
       "pr_sigma_weekend_factor": 1,
       "noweekmod": true,
-      "run": false,
+      "run": true,
       "date_start": "2020-03-14T00:00:00"
     },
     {
@@ -683,7 +683,7 @@
       "pr_mean_weekend_factor": 0.4,
       "pr_sigma_weekend_factor": 1,
       "noweekmod": true,
-      "run": false,
+      "run": true,
       "date_start": "2020-03-14T00:00:00"
     },
     {
@@ -704,7 +704,7 @@
       "pr_mean_weekend_factor": 0.4,
       "pr_sigma_weekend_factor": 1,
       "noweekmod": true,
-      "run": false,
+      "run": true,
       "date_start": "2020-03-14T00:00:00"
     },
     {
@@ -725,7 +725,7 @@
       "pr_mean_weekend_factor": 0.4,
       "pr_sigma_weekend_factor": 1,
       "noweekmod": true,
-      "run": false,
+      "run": true,
       "date_start": "2020-03-14T00:00:00"
     },
     {
@@ -748,7 +748,7 @@
       "numsims": 40,
       "numtune": 80,
       "noweekmod": true,
-      "run": false,
+      "run": true,
       "date_start": "2020-03-14T00:00:00"
     },
     {
@@ -769,7 +769,7 @@
       "pr_mean_weekend_factor": 0.4,
       "pr_sigma_weekend_factor": 1,
       "noweekmod": true,
-      "run": false,
+      "run": true,
       "date_start": "2020-03-14T00:00:00"
     },
     {
@@ -790,7 +790,7 @@
       "pr_mean_weekend_factor": 0.4,
       "pr_sigma_weekend_factor": 1,
       "noweekmod": true,
-      "run": false,
+      "run": true,
       "date_start": "2020-03-14T00:00:00"
     },
     {
@@ -811,7 +811,7 @@
       "pr_mean_weekend_factor": 0.4,
       "pr_sigma_weekend_factor": 1,
       "noweekmod": true,
-      "run": false,
+      "run": true,
       "date_start": "2020-03-14T00:00:00"
     },
     {
@@ -832,7 +832,7 @@
       "pr_mean_weekend_factor": 0.4,
       "pr_sigma_weekend_factor": 1,
       "noweekmod": true,
-      "run": false,
+      "run": true,
       "date_start": "2020-03-14T00:00:00"
     },
     {
@@ -852,7 +852,7 @@
       "pr_delay_mean_of_median": 3,
       "pr_mean_weekend_factor": 0.4,
       "pr_sigma_weekend_factor": 1,
-      "run": false,
+      "run": true,
       "date_start": "2020-03-14T00:00:00"
     },
     {
@@ -874,7 +874,7 @@
       "pr_sigma_weekend_factor": 1,
       "numsims": 50,
       "numtune": 80,
-      "run": false,
+      "run": true,
       "date_start": "2020-03-14T00:00:00"
     },
     {
@@ -894,7 +894,7 @@
       "pr_delay_mean_of_median": 3,
       "pr_mean_weekend_factor": 0.4,
       "pr_sigma_weekend_factor": 1,
-      "run": false,
+      "run": true,
       "date_start": "2020-03-14T00:00:00"
     },
     {
@@ -914,7 +914,7 @@
       "pr_delay_mean_of_median": 3,
       "pr_mean_weekend_factor": 0.4,
       "pr_sigma_weekend_factor": 1,
-      "run": false,
+      "run": true,
       "date_start": "2020-03-14T00:00:00"
     },
     {
@@ -934,7 +934,7 @@
       "pr_delay_mean_of_median": 3,
       "pr_mean_weekend_factor": 0.4,
       "pr_sigma_weekend_factor": 1,
-      "run": false,
+      "run": true,
       "date_start": "2020-03-14T00:00:00"
     },
     {
@@ -954,7 +954,7 @@
       "pr_delay_mean_of_median": 3,
       "pr_mean_weekend_factor": 0.4,
       "pr_sigma_weekend_factor": 1,
-      "run": false,
+      "run": true,
       "date_start": "2020-03-14T00:00:00"
     },
     {
@@ -976,7 +976,7 @@
       "pr_sigma_weekend_factor": 1,
       "numsims": 30,
       "numtune": 80,
-      "run": false,
+      "run": true,
       "date_start": "2020-03-14T00:00:00"
     },
     {
@@ -996,7 +996,7 @@
       "pr_delay_mean_of_median": 3,
       "pr_mean_weekend_factor": 0.4,
       "pr_sigma_weekend_factor": 1,
-      "run": false,
+      "run": true,
       "date_start": "2020-03-14T00:00:00"
     },
     {
@@ -1016,7 +1016,7 @@
       "pr_delay_mean_of_median": 3,
       "pr_mean_weekend_factor": 0.4,
       "pr_sigma_weekend_factor": 1,
-      "run": false,
+      "run": true,
       "date_start": "2020-03-14T00:00:00"
     },
     {
@@ -1036,7 +1036,7 @@
       "pr_delay_mean_of_median": 3,
       "pr_mean_weekend_factor": 0.4,
       "pr_sigma_weekend_factor": 1,
-      "run": false,
+      "run": true,
       "date_start": "2020-03-14T00:00:00"
     },
     {
@@ -1056,7 +1056,7 @@
       "pr_delay_mean_of_median": 3,
       "pr_mean_weekend_factor": 0.4,
       "pr_sigma_weekend_factor": 1,
-      "run": false,
+      "run": true,
       "date_start": "2020-03-14T00:00:00"
     },
     {
@@ -1076,7 +1076,7 @@
       "pr_delay_mean_of_median": 3,
       "pr_mean_weekend_factor": 0.4,
       "pr_sigma_weekend_factor": 1,
-      "run": false,
+      "run": true,
       "date_start": "2020-03-14T00:00:00"
     },
     {
@@ -1097,7 +1097,7 @@
       "pr_mean_weekend_factor": 0.4,
       "pr_sigma_weekend_factor": 1,
       "noweekmod": true,
-      "run": false,
+      "run": true,
       "date_start": "2020-03-14T00:00:00"
     },
     {
@@ -1117,7 +1117,7 @@
       "pr_delay_mean_of_median": 3,
       "pr_mean_weekend_factor": 0.4,
       "pr_sigma_weekend_factor": 1,
-      "run": false,
+      "run": true,
       "date_start": "2020-03-14T00:00:00"
     },
     {
@@ -1137,7 +1137,7 @@
       "pr_delay_mean_of_median": 3,
       "pr_mean_weekend_factor": 0.4,
       "pr_sigma_weekend_factor": 1,
-      "run": false,
+      "run": true,
       "date_start": "2020-03-14T00:00:00"
     },
     {
@@ -1157,7 +1157,7 @@
       "pr_delay_mean_of_median": 3,
       "pr_mean_weekend_factor": 0.4,
       "pr_sigma_weekend_factor": 1,
-      "run": false,
+      "run": true,
       "date_start": "2020-03-14T00:00:00"
     },
     {
@@ -1200,7 +1200,7 @@
       "noweekmod": true,
       "numsims": 30,
       "numtune": 80,
-      "run": false,
+      "run": true,
       "date_start": "2020-03-14T00:00:00"
     },
     {
@@ -1221,7 +1221,7 @@
       "pr_mean_weekend_factor": 0.4,
       "pr_sigma_weekend_factor": 1,
       "noweekmod": true,
-      "run": false,
+      "run": true,
       "date_start": "2020-03-14T00:00:00"
     },
     {
@@ -1243,7 +1243,7 @@
       "pr_sigma_weekend_factor": 1,
       "numsims": 40,
       "numtune": 80,
-      "run": false,
+      "run": true,
       "date_start": "2020-03-14T00:00:00"
     },
     {
@@ -1263,7 +1263,7 @@
       "pr_delay_mean_of_median": 3,
       "pr_mean_weekend_factor": 0.4,
       "pr_sigma_weekend_factor": 1,
-      "run": false,
+      "run": true,
       "date_start": "2020-03-14T00:00:00"
     },
     {
@@ -1283,7 +1283,7 @@
       "pr_delay_mean_of_median": 3,
       "pr_mean_weekend_factor": 0.4,
       "pr_sigma_weekend_factor": 1,
-      "run": false,
+      "run": true,
       "date_start": "2020-03-14T00:00:00"
     },
     {
@@ -1346,7 +1346,7 @@
       "pr_delay_mean_of_median": 3,
       "pr_mean_weekend_factor": 0.4,
       "pr_sigma_weekend_factor": 1,
-      "run": false,
+      "run": true,
       "date_start": "2020-03-14T00:00:00"
     },
     {
@@ -1366,7 +1366,7 @@
       "pr_delay_mean_of_median": 3,
       "pr_mean_weekend_factor": 0.4,
       "pr_sigma_weekend_factor": 1,
-      "run": false,
+      "run": true,
       "date_start": "2020-03-14T00:00:00"
     },
     {
@@ -1386,7 +1386,7 @@
       "pr_delay_mean_of_median": 3,
       "pr_mean_weekend_factor": 0.4,
       "pr_sigma_weekend_factor": 1,
-      "run": false,
+      "run": true,
       "date_start": "2020-03-14T00:00:00"
     },
     {
@@ -1407,7 +1407,7 @@
       "pr_mean_weekend_factor": 0.4,
       "pr_sigma_weekend_factor": 1,
       "noweekmod": true,
-      "run": false,
+      "run": true,
       "date_start": "2020-03-14T00:00:00"
     },
     {
@@ -1447,7 +1447,7 @@
       "pr_delay_mean_of_median": 3,
       "pr_mean_weekend_factor": 0.4,
       "pr_sigma_weekend_factor": 1,
-      "run": false,
+      "run": true,
       "date_start": "2020-03-14T00:00:00"
     },
     {
@@ -1487,7 +1487,7 @@
       "pr_delay_mean_of_median": 3,
       "pr_mean_weekend_factor": 0.4,
       "pr_sigma_weekend_factor": 1,
-      "run": false,
+      "run": true,
       "date_start": "2020-03-14T00:00:00"
     },
     {
@@ -1508,7 +1508,7 @@
       "pr_mean_weekend_factor": 0.4,
       "pr_sigma_weekend_factor": 1,
       "noweekmod": true,
-      "run": false,
+      "run": true,
       "date_start": "2020-03-14T00:00:00"
     },
     {
@@ -1528,7 +1528,7 @@
       "pr_delay_mean_of_median": 3,
       "pr_mean_weekend_factor": 0.4,
       "pr_sigma_weekend_factor": 1,
-      "run": false,
+      "run": true,
       "date_start": "2020-03-14T00:00:00"
     },
     {
@@ -1548,7 +1548,7 @@
       "pr_delay_mean_of_median": 3,
       "pr_mean_weekend_factor": 0.4,
       "pr_sigma_weekend_factor": 1,
-      "run": false,
+      "run": true,
       "date_start": "2020-03-14T00:00:00"
     },
     {
@@ -1568,7 +1568,7 @@
       "pr_delay_mean_of_median": 3,
       "pr_mean_weekend_factor": 0.4,
       "pr_sigma_weekend_factor": 1,
-      "run": false,
+      "run": true,
       "date_start": "2020-03-14T00:00:00"
     },
     {
@@ -1588,7 +1588,7 @@
       "pr_delay_mean_of_median": 3,
       "pr_mean_weekend_factor": 0.4,
       "pr_sigma_weekend_factor": 1,
-      "run": false,
+      "run": true,
       "date_start": "2020-03-14T00:00:00"
     },
     {
@@ -1608,7 +1608,7 @@
       "pr_delay_mean_of_median": 3,
       "pr_mean_weekend_factor": 0.4,
       "pr_sigma_weekend_factor": 1,
-      "run": false,
+      "run": true,
       "date_start": "2020-03-14T00:00:00"
     },
     {
@@ -1628,7 +1628,7 @@
       "pr_delay_mean_of_median": 3,
       "pr_mean_weekend_factor": 0.4,
       "pr_sigma_weekend_factor": 1,
-      "run": false,
+      "run": true,
       "date_start": "2020-03-14T00:00:00"
     },
     {
@@ -1668,7 +1668,7 @@
       "pr_delay_mean_of_median": 3,
       "pr_mean_weekend_factor": 0.4,
       "pr_sigma_weekend_factor": 1,
-      "run": false,
+      "run": true,
       "date_start": "2020-03-14T00:00:00"
     },
     {
@@ -1688,7 +1688,7 @@
       "pr_delay_mean_of_median": 3,
       "pr_mean_weekend_factor": 0.4,
       "pr_sigma_weekend_factor": 1,
-      "run": false,
+      "run": true,
       "date_start": "2020-03-14T00:00:00"
     },
     {
@@ -1709,7 +1709,7 @@
       "pr_mean_weekend_factor": 0.4,
       "pr_sigma_weekend_factor": 1,
       "noweekmod": true,
-      "run": false,
+      "run": true,
       "date_start": "2020-03-14T00:00:00"
     },
     {
@@ -1730,7 +1730,7 @@
       "pr_mean_weekend_factor": 0.4,
       "pr_sigma_weekend_factor": 1,
       "noweekmod": true,
-      "run": false,
+      "run": true,
       "date_start": "2020-03-14T00:00:00"
     },
     {
@@ -1750,7 +1750,7 @@
       "pr_delay_mean_of_median": 3,
       "pr_mean_weekend_factor": 0.4,
       "pr_sigma_weekend_factor": 1,
-      "run": false,
+      "run": true,
       "date_start": "2020-03-14T00:00:00"
     },
     {
@@ -1770,7 +1770,7 @@
       "pr_delay_mean_of_median": 3,
       "pr_mean_weekend_factor": 0.4,
       "pr_sigma_weekend_factor": 1,
-      "run": false,
+      "run": true,
       "date_start": "2020-03-14T00:00:00"
     },
     {
@@ -1791,7 +1791,7 @@
       "pr_mean_weekend_factor": 0.4,
       "pr_sigma_weekend_factor": 1,
       "noweekmod": true,
-      "run": false,
+      "run": true,
       "date_start": "2020-03-14T00:00:00"
     },
     {
@@ -1812,7 +1812,7 @@
       "pr_mean_weekend_factor": 0.4,
       "pr_sigma_weekend_factor": 1,
       "noweekmod": true,
-      "run": false,
+      "run": true,
       "date_start": "2020-03-14T00:00:00"
     },
     {
@@ -1854,7 +1854,7 @@
       "pr_sigma_weekend_factor": 1,
       "numsims": 30,
       "numtune": 80,
-      "run": false,
+      "run": true,
       "date_start": "2020-03-14T00:00:00"
     },
     {
@@ -1874,7 +1874,7 @@
       "pr_delay_mean_of_median": 3,
       "pr_mean_weekend_factor": 0.4,
       "pr_sigma_weekend_factor": 1,
-      "run": false,
+      "run": true,
       "date_start": "2020-03-14T00:00:00"
     },
     {
@@ -1894,7 +1894,7 @@
       "pr_delay_mean_of_median": 3,
       "pr_mean_weekend_factor": 0.4,
       "pr_sigma_weekend_factor": 1,
-      "run": false,
+      "run": true,
       "date_start": "2020-03-14T00:00:00"
     },
     {
@@ -1915,7 +1915,7 @@
       "pr_mean_weekend_factor": 0.4,
       "pr_sigma_weekend_factor": 1,
       "noweekmod": true,
-      "run": false,
+      "run": true,
       "date_start": "2020-03-14T00:00:00"
     },
     {
@@ -1936,7 +1936,7 @@
       "pr_mean_weekend_factor": 0.4,
       "pr_sigma_weekend_factor": 1,
       "noweekmod": true,
-      "run": false,
+      "run": true,
       "date_start": "2020-03-14T00:00:00"
     }
   ]

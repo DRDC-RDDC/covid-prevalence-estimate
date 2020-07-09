@@ -315,6 +315,9 @@ if __name__=='__main__':
             repo.git.merge('-s','recursive', worker_branch + '_' + regionid)
           except Exception as e:
             log.error(str(e))
+            repo.git.merge('--abort')
+            log.info('using recursive theirs as backup.')
+            repo.git.merge('-s','recursive','-X','theirs', worker_branch + '_' + regionid)
 
           log.info('Pushing branch %s to origin' % worker_branch)
           repo.remotes.origin.push(worker_branch)
