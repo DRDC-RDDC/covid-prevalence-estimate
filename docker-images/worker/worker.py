@@ -278,27 +278,39 @@ if __name__=='__main__':
           log.error(str(e))
 
       # We try to push the results to git
+      regionid = pop["source_country"] + pop["source_state"] + ("" if pop["source_region"] == None else pop["source_region"])
+      regionid = regionid.replace(' ','')  # regionid = 'USColoradoElPaso'
+
+      message = "Updates for " + pop['name']
+      try:
+        log.info('Local commit prior to pulling')
+        repo.git.checkout('-b', worker_branch + '_' + regionid)
+        # we need to commit our changes before pulling
+        repo.git.add('--all')
+        repo.git.commit('-m', message, author='Steven Horn')
+        # switch back to branch
+        repo.git.checkout(worker_branch)
+      except git.GitCommandError as e:
+        log.error(str(e))
+      
       numpushattempts = 0
       success = False
       while not success and numpushattempts < 6:
         numpushattempts = numpushattempts + 1
         try:
           log.info('Trying to commit.  Attempt %d' % numpushattempts)
-          message = "Updates for " + pop['name']
-          
-          try:
-            log.info('Local commit prior to pulling')
-            # we need to commit our changes before pulling
-            repo.git.add('--all')
-            repo.git.commit('-m', message, author='Steven Horn')
-          except git.GitCommandError as e:
-            log.error(str(e))
-
           try:
             log.info('Pulling from git prior to pushing')
             # the merge should be seamless
             res = repo.remotes.origin.pull(worker_branch)
           except git.GitCommandError as e:
+            log.error(str(e))
+
+          try:
+            log.info('Merging...')
+            # we should now be on the newest branch - so we merge our result in
+            repo.git.merge('-s','recursive','-X','theirs', worker_branch + '_' + regionid)
+          except Exception as e:
             log.error(str(e))
 
           log.info('Pushing branch %s to origin' % worker_branch)
@@ -308,6 +320,11 @@ if __name__=='__main__':
           log.error("Error pushing. " + str(e))
           # Wait before trying again to avoid hammering git
           time.sleep(30)
+
+          # this probably happened since the remote was updated before we pushed,
+          # we will try again.
+          # force reset the branch (removing the failed merge result)
+          repo.git.checkout('-f', worker_branch)
       
       if not success:
         log.error('Unable to commit %s' % pop['name'])
@@ -322,7 +339,7 @@ if __name__=='__main__':
       if num_wait_loops > 20:  # minutes
         # this will break the loop and exit the program
         timed_out = True
-        
+
       # q.check_expired_leases()
 
   log.info("Worker queue empty, exiting")

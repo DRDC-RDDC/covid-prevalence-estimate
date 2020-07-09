@@ -1,4 +1,10 @@
 redis
 GitPython
+numpy
+matplotlib
+pymc3==3.9.1
+theano
+pandas
+seaborn
 git+https://oauth2:53gZwasv6UmExxrohqPm@gitlab.com/stevenhorn/covid-prevalence-estimate.git
 https://github.com/Priesemann-Group/covid19_inference/archive/master.zip

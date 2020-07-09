@@ -92,7 +92,7 @@ def savecsv(this_model, trace, pop):
     dfu = dfr
 
   # save
-  dfu.to_csv(filepath, index=False)
+  dfu.to_csv(filepath, index=False, float_format='%.8f')
 
   todayix = np.where(x > analysis_date)[0][0] - 1
 
@@ -141,11 +141,10 @@ def savecsv(this_model, trace, pop):
     dfnow = dfnowr
 
   # save
-  dfnow.to_csv(filepath, index=False)
+  dfnow.to_csv(filepath, index=False, float_format='%.8f')
 
   return dfu, dfnow
   
-
 
 def get_data(pop):
   bd = isoparse(pop['date_start'])
