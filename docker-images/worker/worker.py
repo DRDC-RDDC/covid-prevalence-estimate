@@ -309,7 +309,10 @@ if __name__=='__main__':
           try:
             log.info('Merging...')
             # we should now be on the newest branch - so we merge our result in
-            repo.git.merge('-s','recursive','-X','theirs', worker_branch + '_' + regionid)
+            #repo.git.merge('-s','recursive','-X','theirs', worker_branch + '_' + regionid)
+            
+            # there really shouldn't be conflicts.
+            repo.git.merge('-s','recursive', worker_branch + '_' + regionid)
           except Exception as e:
             log.error(str(e))
 

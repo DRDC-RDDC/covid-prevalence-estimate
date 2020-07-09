@@ -92,6 +92,7 @@ def savecsv(this_model, trace, pop):
     dfu = dfr
 
   # save
+  dfu=dfu.sort_values(by=['nameid'])
   dfu.to_csv(filepath, index=False, float_format='%.8f')
 
   todayix = np.where(x > analysis_date)[0][0] - 1
@@ -141,6 +142,7 @@ def savecsv(this_model, trace, pop):
     dfnow = dfnowr
 
   # save
+  dfnow=dfnow.sort_values(by=['nameid'])
   dfnow.to_csv(filepath, index=False, float_format='%.8f')
 
   return dfu, dfnow
