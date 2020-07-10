@@ -163,13 +163,21 @@ def get_data(pop):
     df = df.drop(columns=["Lat", "Long_","UID","iso2","iso3","code3","FIPS","Combined_Key","Population"]).rename(
                         columns={"Province_State": "state", "Country_Region": "country", "Admin2": "county"}
                     )
-    df = df.set_index(["country", "state", "county"])
+    if pop['source_region'] is None:
+      df = df.set_index(["country", "state"])
+    else:
+      df = df.set_index(["country", "state", "county"])
+
     df.columns = pd.to_datetime(df.columns)
     df = df.T
     df.index.name = "date"
     dfddata = pd.DataFrame(columns=["date", "deaths"]).set_index("date")
     #popname = "Colorado - El Paso"
-    dfddata["deaths"] = df[("US","Colorado", "El Paso")]
+    if pop['source_region'] is None:
+      dfddata["deaths"] = df[(pop['source_country'], pop['source_state'])]
+    else:
+      dfddata["deaths"] = df[(pop['source_country'], pop['source_state'], pop['source_region'])]
+
     end_date = dfddata.index[-1]
     #dfddatafilter = dfddata[bd:end_date]
     dfdcumdata = dfddata[bd:end_date]
@@ -184,12 +192,23 @@ def get_data(pop):
     df = df.drop(columns=["Lat", "Long_","UID","iso2","iso3","code3","FIPS","Combined_Key"]).rename(
                         columns={"Province_State": "state", "Country_Region": "country", "Admin2": "county"}
                     )
-    df = df.set_index(["country", "state", "county"])
+
+    if pop['source_region'] is None:
+      df = df.set_index(["country", "state"])
+    else:
+      df = df.set_index(["country", "state", "county"])
+
     df.columns = pd.to_datetime(df.columns)
     df = df.T
     df.index.name = "date"
     dfdata = pd.DataFrame(columns=["date", "confirmed"]).set_index("date")
-    dfdata["confirmed"] = df[("US","Colorado", "El Paso")]
+
+    #dfdata["confirmed"] = df[("US","Colorado", "El Paso")]
+    if pop['source_region'] is None:
+      dfddata["confirmed"] = df[(pop['source_country'], pop['source_state'])]
+    else:
+      dfddata["confirmed"] = df[(pop['source_country'], pop['source_state'], pop['source_region'])]
+
     end_date = dfdata.index[-1]
     dfdatafilter = dfdata[bd:end_date]
     dfdatafilter = (dfdatafilter.diff().drop(dfdatafilter.index[0]).astype(int))

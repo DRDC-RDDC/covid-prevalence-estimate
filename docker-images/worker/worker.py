@@ -353,7 +353,7 @@ if __name__=='__main__':
       num_wait_loops = num_wait_loops + 1
       log.info("Waiting for work")
 
-      if num_wait_loops > 20:  # minutes
+      if num_wait_loops > 10:  # minutes
         # this will break the loop and exit the program
         timed_out = True
 
