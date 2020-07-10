@@ -164,11 +164,16 @@ def get_data(pop):
                         columns={"Province_State": "state", "Country_Region": "country", "Admin2": "county"}
                     )
     if pop['source_region'] is None:
+      df = df.drop(columns=["county"])
       df = df.set_index(["country", "state"])
     else:
       df = df.set_index(["country", "state", "county"])
 
     df.columns = pd.to_datetime(df.columns)
+    if pop['source_region'] is None:
+      df = df.loc[(pop['source_country'],pop['source_state'])]
+    else:
+      df = df.loc[(pop['source_country'],pop['source_state'], pop['source_region'])]
     df = df.T
     df.index.name = "date"
     dfddata = pd.DataFrame(columns=["date", "deaths"]).set_index("date")
@@ -176,13 +181,13 @@ def get_data(pop):
     if pop['source_region'] is None:
       dfddata["deaths"] = df[(pop['source_country'], pop['source_state'])]
     else:
-      dfddata["deaths"] = df[(pop['source_country'], pop['source_state'], pop['source_region'])]
+      dfddata["deaths"] = df#df[(pop['source_country'], pop['source_state'], pop['source_region'])]
 
     end_date = dfddata.index[-1]
     #dfddatafilter = dfddata[bd:end_date]
     dfdcumdata = dfddata[bd:end_date]
     #dfddata.plot()
-    print("Last data: " + str(end_date))
+    #print("Last data: " + str(end_date))
     cum_deaths = dfdcumdata["deaths"]
     
     dataurl = r"/content/COVID-19/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_US.csv"
@@ -194,20 +199,25 @@ def get_data(pop):
                     )
 
     if pop['source_region'] is None:
+      df = df.drop(columns=["county"])
       df = df.set_index(["country", "state"])
     else:
       df = df.set_index(["country", "state", "county"])
-
+    
     df.columns = pd.to_datetime(df.columns)
+    if pop['source_region'] is None:
+      df = df.loc[(pop['source_country'],pop['source_state'])]
+    else:
+      df = df.loc[(pop['source_country'],pop['source_state'], pop['source_region'])]
+
     df = df.T
     df.index.name = "date"
     dfdata = pd.DataFrame(columns=["date", "confirmed"]).set_index("date")
 
-    #dfdata["confirmed"] = df[("US","Colorado", "El Paso")]
     if pop['source_region'] is None:
-      dfddata["confirmed"] = df[(pop['source_country'], pop['source_state'])]
+      dfdata["confirmed"] = df[(pop['source_country'], pop['source_state'])] 
     else:
-      dfddata["confirmed"] = df[(pop['source_country'], pop['source_state'], pop['source_region'])]
+      dfdata["confirmed"] = df#df[(pop['source_country'], pop['source_state'], pop['source_region'])]
 
     end_date = dfdata.index[-1]
     dfdatafilter = dfdata[bd:end_date]
@@ -226,12 +236,8 @@ def get_data(pop):
     dfi = df.loc[(pop['source_state'],pop['source_region'])]#df[df['health_region']==pop['source_region']]#'Montréal']
     dfi = dfi.set_index("date")
     dfdata = dfi
-    #dfdata = dfi.drop(columns=["province","health_region"])
-    #dfdata = dfdata.set_index("date")
     end_date = dfdata.index[-1]
     dfdatafilter = dfdata[bd:end_date]
-    #dfdata.plot()
-    #dfdatafilter.plot()
     new_cases = dfdatafilter["confirmed"]
 
     try:
