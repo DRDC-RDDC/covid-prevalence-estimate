@@ -88,7 +88,7 @@ def savecsv(this_model, trace, pop):
   dfr = pd.DataFrame(data)
   rfilepath = savefolder + '/' + folder + '_timeseries.csv'
   dfr=dfr.sort_values(by=['dates'])
-  dfr.to_csv(filepath, index=False, float_format='%.8f')
+  dfr.to_csv(rfilepath, index=False, float_format='%.8f')
 
   dfu = dfr
   ''' Saving timeseries for all regions to one file is not efficient
