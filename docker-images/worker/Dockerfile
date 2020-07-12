@@ -4,12 +4,13 @@ FROM python:3.6.11-slim-buster
 
 # [optimization] g++ is needed for compiling optimized model
 # [optimization] libopenblas provides faster calculations in theano (pymc3)
+# kdiff3 is used for git mergetool automation
 RUN apt-get update \
     && apt-get install -y apt-utils \
     && apt-get install -y --no-install-recommends g++ \
-    && apt-get install -y libopenblas-dev \
-    && apt-get install -y libblas-dev \
-    && apt-get install -y liblapack-dev \
+    && apt-get install -y --no-install-recommends libopenblas-dev \
+    && apt-get install -y --no-install-recommends libblas-dev \
+    && apt-get install -y --no-install-recommends liblapack-dev \
     && apt-get install -y --no-install-recommends gnutls-bin \
     && apt-get install -y --no-install-recommends git \
     && apt-get purge -y --auto-remove \

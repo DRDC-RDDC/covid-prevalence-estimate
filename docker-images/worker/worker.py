@@ -4,10 +4,6 @@
 This is the main file for the worker process.  There will normally be
 many worker processes.
 
-TODO: Document
-
-
-LICENSE
 
     COVID-Prevalence  Copyright (c) Her Majesty the Queen in Right of Canada, 
     as represented by the Minister of National Defence, 2020.
@@ -32,7 +28,6 @@ import os
 
 # Here, we add an environment variable to help theano locate the BLAS libraries.
 # found in ./usr/lib/x86_64-linux-gnu/libblas.so
-# THEANO_FLAGS=blas.ldflags="-L/usr/lib/x86_64-linux-gnu/ -lblas"
 # More info at http://deeplearning.net/software/theano/troubleshooting.html
 os.environ["THEANO_FLAGS"] = 'blas.ldflags="-L/usr/lib/x86_64-linux-gnu/ -lblas"'
 
