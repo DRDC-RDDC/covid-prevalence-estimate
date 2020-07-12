@@ -48,10 +48,11 @@ from covid19_inference.model import *
 from datetime import timezone
 from dateutil.parser import parse, isoparse
 from pathlib import Path
-from covid_prevalence.models import SEIRa     # Our model
+
 import covid_prevalence as covprev
+from covid_prevalence.models import SEIRa     # Our model
 from covid_prevalence.plots import plot_data, plot_fit, plot_IFR, plot_posteriors, plot_prevalence
-from covid_prevalence._repository import gitpush
+from covid_prevalence.repository import gitpush
 
 # this is used for json serialization of dates
 def converters(o):
@@ -267,7 +268,7 @@ if __name__=='__main__':
         plot_fit(this_model, trace, new_cases, pop, settings)
         plot_posteriors(this_model, trace, pop, settings)
         plot_prevalence(this_model, trace, pop, settings)
-        plot_IFR(this_model, trace, pop, settings, cum_deaths)
+        #plot_IFR(this_model, trace, pop, settings, cum_deaths)
         #dft, dfn = savecsv(this_model, trace, pop)
         log.info('Updating CSV files')
         try:
@@ -336,6 +337,7 @@ if __name__=='__main__':
           # this probably happened since the remote was updated before we pushed,
           # we will try again.
           # force reset the branch (removing the failed merge result)
+          repo.git.merge('--abort')
           repo.git.checkout('-f', worker_branch)
       
       if not success:

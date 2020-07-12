@@ -29,6 +29,7 @@ import logging
 import json
 import git
 import os
+import numpy as np
 import pandas as pd
 import datetime
 import covid_prevalence as covprev
@@ -103,31 +104,49 @@ if __name__=='__main__':
                 log.error('error checking last run time, assume 24. ' + str(e))
                 dt_hours = 24
 
-            # TODO: don't hard-code this
-            if dt_hours < 20:
-                log.info("Job Skipped: %s, last run %d hours ago" % (pop['name'], dt_hours ))
-            else:
-                log.info("Job Queuing: %s, last run %d hours ago" % (pop['name'], dt_hours ))
-                # Fetch Data for processing
-                new_cases, cum_deaths, bd = covprev.data.get_data(pop)
+            # This is the frequency with which to run the model for this region
+            max_frequency = config['settings']['frequency']
+            
+            if 'frequency' in pop:
+                # This region has an override on the frequency
+                log.info("Frequency override: %d hours" % pop['frequency'] )
+                max_frequency = pop['frequency']
 
-                # Structure work item for worker
-                work_item = dict(
-                    model=model,
-                    settings=settings,
-                    pop=pop,
-                    new_cases=new_cases.to_json(orient='table'),        # This serializes the pandas data
-                    cum_deaths=cum_deaths.to_json(orient='table'),      # 
-                    submitted=str(datetime.datetime.utcnow())
-                )
-                
-                # send the work-item to the worker queue
-                try:
-                    q.enqueue(json.dumps(work_item).encode('utf-8'))
-                    log.info("Job Queued: %s" % pop['name'] )
-                except Exception as e:
-                    log.info(str(work_item))
-                    log.error(str(e))
+            if dt_hours < max_frequency:
+                log.info("Job Skipped: %s, last run %d hours ago" % (pop['name'], dt_hours ))
+                continue
+
+            # Fetch Data for processing
+            log.debug('Fetching region data.')
+            new_cases, cum_deaths, bd = covprev.data.get_data(pop)
+            
+            # fix up negative case values - reduces model quality
+            new_cases[new_cases < 0] = 0
+
+            if np.sum(new_cases > 0) == 0:
+                # no cases in this region
+                log.info("Job Skipped: %s, no cases" % pop['name'])
+                continue
+
+            log.info("Job Queuing: %s, last run %d hours ago" % (pop['name'], dt_hours ))
+
+            # Structure work item for worker
+            work_item = dict(
+                model=model,
+                settings=settings,
+                pop=pop,
+                new_cases=new_cases.to_json(orient='table'),        # This serializes the pandas data
+                cum_deaths=cum_deaths.to_json(orient='table'),      # 
+                submitted=str(datetime.datetime.utcnow())
+            )
+            
+            # send the work-item to the worker queue
+            try:
+                q.enqueue(json.dumps(work_item).encode('utf-8'))
+                log.info("Job Queued: %s" % pop['name'] )
+            except Exception as e:
+                log.info(str(work_item))
+                log.error(str(e))
         else:
             log.info("Job Disabled: %s" % pop['name'] )
 

@@ -300,12 +300,7 @@ def plot_prevalence(this_model, trace, pop, settings, closeplot=True): #closeplo
     Is_t_50.append(b)
     Is_t_95.append(c)
 
-  x_data = pd.date_range(start=this_model.data_begin,                             end=this_model.data_begin + datetime.timedelta(days=I_t.shape[2]-1) )
   x_sim = pd.date_range(start=this_model.sim_begin, end=this_model.sim_end )
-
-  shift = 0#5#7
-  x_data2 = pd.date_range(start=this_model.data_begin- datetime.timedelta(shift), end=this_model.data_begin + datetime.timedelta(days=I_t.shape[2]-1) )
-
 
   fig, ax1 = plt.subplots()
   plt.plot(x_sim,Ip_t_50, label="Prevalence")
@@ -371,9 +366,9 @@ def plot_prevalence(this_model, trace, pop, settings, closeplot=True): #closeplo
   plt.plot(x_sim,p_t_50, label="Prevalence")
   plt.fill_between(x_sim,p_t_05,p_t_95,lw=0,alpha=0.1, label="95CI")
   plt.title("Infectious prevalence times probability of infecting ($p_0$)\n %s, pop. = %s" % (popname, N))
-  plt.ylabel("$p_0$ (%)");
+  plt.ylabel("$p_0$ (%)")
   plt.xlabel("Date")
-  plt.xticks(rotation=45);
+  plt.xticks(rotation=45)
 
   maxy = np.max(p_t_95)
   plt.plot([datetime.datetime.today(), datetime.datetime.today()], [0,maxy],'r-', label="Today")
@@ -393,11 +388,9 @@ def plot_prevalence(this_model, trace, pop, settings, closeplot=True): #closeplo
 
   plt.plot(x_sim,Ia_t_50, label="Asymptomatic or undetected")
   plt.fill_between(x_sim,Ia_t_05,Ia_t_95,lw=0,alpha=0.1, label="95CI")
-
   plt.plot(x_sim,Is_t_50, label="Presymptomatic")
   plt.fill_between(x_sim,Is_t_05,Is_t_95,lw=0,alpha=0.1, label="95CI")
-
-  plt.ylabel("# of infections");
+  plt.ylabel("# of infections")
   plt.xticks(rotation=45)
   plt.title("Prevalence of COVID-19 \n %s" % popname)
   plt.legend()

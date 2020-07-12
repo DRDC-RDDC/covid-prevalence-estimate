@@ -29,9 +29,21 @@ def get_folders(pop):
   return savefolder,folder
 
 def get_percentile_timeseries(X_t, islambda=False):
-  X_t_05 = []
+  ''' Get the 2.5%, 50%, and 97.5% percentiles from the time series.
+
+  Parameters
+  ----------
+  X_t : :array: float
+      This is the time series data which is X by Y dimensional.  The
+      dimensions are time and samples.
+
+  islambda : bool
+      If true, this is for the spreading rate (lambda)
+
+  '''
+  X_t_025 = []
   X_t_50 = []
-  X_t_95 = []
+  X_t_975 = []
   ix = 2
   if islambda:
     ix = 1
@@ -42,8 +54,8 @@ def get_percentile_timeseries(X_t, islambda=False):
       a,b,c = np.percentile(X_t[:,t],[2.5,50,97.5])
     else:
       a,b,c = np.percentile(X_t[:,0,t],[2.5,50,97.5])
-    X_t_05.append(a)
+    X_t_025.append(a)
     X_t_50.append(b)
-    X_t_95.append(c)
+    X_t_975.append(c)
   
-  return np.array(X_t_05), np.array(X_t_50), np.array(X_t_95)
+  return np.array(X_t_025), np.array(X_t_50), np.array(X_t_975)

@@ -28,14 +28,23 @@ from . import utility as ut
 
 def savecsv(this_model, trace, pop):
   analysis_date = datetime.datetime.utcnow()
-  _, folder = ut.get_folders(pop)
+  savefolder, folder = ut.get_folders(pop)
   hr_uid = 0
+  FIPS = 0
 
   if pop['source'] == 'codwg':
     infodf = pd.read_csv('/content/Covid19Canada/other/hr_map.csv')
     popinfo = infodf.loc[lambda df: (df['Province'] == pop["source_state"]) & (df['health_region'] == pop["source_region"])]
     hr_uid = popinfo["HR_UID"].to_numpy()[0]
   
+  if pop['source'] == 'jhu-us':
+    infodf = pd.read_csv('/content/covid-prevalence/data/UID_ISO_FIPS_LookUp_Table.csv')
+    if pop['source_region'] is None:
+      popinfo = infodf.loc[lambda df: (df['Province_State'] == pop["source_state"]) & (df['iso2'] == pop["source_country"])]
+    else:
+      popinfo = infodf.loc[lambda df: (df['Province_State'] == pop["source_state"]) & (df['Admin2'] == pop["source_region"])]
+    FIPS = popinfo["FIPS"].to_numpy()[0]
+
   # Timeseries
   filepath='/content/covid-prevalence/results/latest_timeseries.csv'
   
@@ -47,36 +56,41 @@ def savecsv(this_model, trace, pop):
   #p0 = 100.0*I_t/N * lambda_t
   Ip_t = I_t + E_t + R_t
 
-  Prev_t_05, Prev_t_50, Prev_t_95 = ut.get_percentile_timeseries(Ip_t)
-  I_t_05, I_t_50, I_t_95 = ut.get_percentile_timeseries(I_t)
-  L_t_05, L_t_50, L_t_95 = ut.get_percentile_timeseries(lambda_t, islambda=True)
+  Prev_t_025, Prev_t_50, Prev_t_975 = ut.get_percentile_timeseries(Ip_t)
+  I_t_025, I_t_50, I_t_975 = ut.get_percentile_timeseries(I_t)
+  L_t_025, L_t_50, L_t_975 = ut.get_percentile_timeseries(lambda_t, islambda=True)
 
   data = dict(
+    FIPS = FIPS,
     HR_UID = list(np.repeat(hr_uid,x.shape[0])),
     nameid = list(np.repeat(folder,x.shape[0])),
     province = list(np.repeat(pop['source_state'],x.shape[0])),
     region = list(np.repeat(pop['source_region'],x.shape[0])),
     analysisTime = list(np.repeat(analysis_date,x.shape[0])), 
     dates = list(x.to_numpy()),
-    pointprevalence_025 = list(map(lambda x: 100*x/N if x >= 0 else 0.0, Prev_t_05)),
+    pointprevalence_025 = list(map(lambda x: 100*x/N if x >= 0 else 0.0, Prev_t_025)),
     pointprevalence_50 = list(map(lambda x: 100*x/N if x >= 0 else 0.0, Prev_t_50)),
-    pointprevalence_975 = list(map(lambda x: 100*x/N if x >= 0 else 0.0, Prev_t_95)),
-    pointinfections_025 = list(map(lambda x: int(np.floor(x)) if np.floor(x) >= 0 else 0, Prev_t_05)),
+    pointprevalence_975 = list(map(lambda x: 100*x/N if x >= 0 else 0.0, Prev_t_975)),
+    pointinfections_025 = list(map(lambda x: int(np.floor(x)) if np.floor(x) >= 0 else 0, Prev_t_025)),
     pointinfections_50 = list(map(lambda x: int(np.floor(x)) if np.floor(x) >= 0 else 0, Prev_t_50)),
-    pointinfections_975 = list(map(lambda x: int(np.floor(x)) if np.floor(x) >= 0 else 0, Prev_t_95)),
-    pointinfectious_025 = list(map(lambda x: int(np.floor(x)) if np.floor(x) >= 0 else 0, I_t_05)),
+    pointinfections_975 = list(map(lambda x: int(np.floor(x)) if np.floor(x) >= 0 else 0, Prev_t_975)),
+    pointinfectious_025 = list(map(lambda x: int(np.floor(x)) if np.floor(x) >= 0 else 0, I_t_025)),
     pointinfectious_50 = list(map(lambda x: int(np.floor(x)) if np.floor(x) >= 0 else 0, I_t_50)),
-    pointinfectious_975 = list(map(lambda x: int(np.floor(x)) if np.floor(x) >= 0 else 0, I_t_95)),
-    pointinfectiousprevalence_05 = list(map(lambda x: 100*x/N if x >= 0 else 0.0, I_t_05)),
+    pointinfectious_975 = list(map(lambda x: int(np.floor(x)) if np.floor(x) >= 0 else 0, I_t_975)),
+    pointinfectiousprevalence_05 = list(map(lambda x: 100*x/N if x >= 0 else 0.0, I_t_025)),
     pointinfectiousprevalence_50 = list(map(lambda x: 100*x/N if x >= 0 else 0.0, I_t_50)),
-    pointinfectiousprevalence_95 = list(map(lambda x: 100*x/N if x >= 0 else 0.0, I_t_95)),
-    infectrate_025 = L_t_05,
+    pointinfectiousprevalence_95 = list(map(lambda x: 100*x/N if x >= 0 else 0.0, I_t_975)),
+    infectrate_025 = L_t_025,
     infectrate_50 = L_t_50,
-    infectrate_975 = L_t_95,
+    infectrate_975 = L_t_975,
     )
   
   dfr = pd.DataFrame(data)
-  
+  rfilepath = savefolder + '/' + folder + '_timeseries.csv'
+  dfr=dfr.sort_values(by=['dates'])
+  dfr.to_csv(filepath, index=False, float_format='%.8f')
+
+  ''' Saving timeseries for all regions to one file is not efficient
   if os.path.isfile(filepath):
     df = pd.read_csv(filepath)
     
@@ -94,32 +108,34 @@ def savecsv(this_model, trace, pop):
   # save
   dfu=dfu.sort_values(by=['nameid'])
   dfu.to_csv(filepath, index=False, float_format='%.8f')
+  '''
 
   todayix = np.where(x > analysis_date)[0][0] - 1
 
   # point result
   data_now = dict(
+    FIPS = FIPS,
     HR_UID = hr_uid,
     nameid = folder,
     province = pop['source_state'],
     region = pop['source_region'],
     analysisTime = analysis_date, 
     dates = x[todayix],
-    pointprevalence_05 = 100*Prev_t_05[todayix]/N if Prev_t_05[todayix] >= 0 else 0.0,
+    pointprevalence_025 = 100*Prev_t_025[todayix]/N if Prev_t_025[todayix] >= 0 else 0.0,
     pointprevalence_50 = 100*Prev_t_50[todayix]/N if Prev_t_50[todayix] >= 0 else 0.0,
-    pointprevalence_95 = 100*Prev_t_95[todayix]/N if Prev_t_95[todayix] >= 0 else 0.0,
-    pointinfections_05 = list(map(lambda x: int(np.floor(x)) if np.floor(x) >= 0 else 0, [Prev_t_05[todayix]])),
+    pointprevalence_975 = 100*Prev_t_975[todayix]/N if Prev_t_975[todayix] >= 0 else 0.0,
+    pointinfections_025 = list(map(lambda x: int(np.floor(x)) if np.floor(x) >= 0 else 0, [Prev_t_025[todayix]])),
     pointinfections_50 = list(map(lambda x: int(np.floor(x)) if np.floor(x) >= 0 else 0, [Prev_t_50[todayix]])),
-    pointinfections_95 = list(map(lambda x: int(np.floor(x)) if np.floor(x) >= 0 else 0, [Prev_t_95[todayix]])),
-    pointinfectious_05 = list(map(lambda x: int(np.floor(x)) if np.floor(x) >= 0 else 0, [I_t_05[todayix]])),
+    pointinfections_975 = list(map(lambda x: int(np.floor(x)) if np.floor(x) >= 0 else 0, [Prev_t_975[todayix]])),
+    pointinfectious_025 = list(map(lambda x: int(np.floor(x)) if np.floor(x) >= 0 else 0, [I_t_025[todayix]])),
     pointinfectious_50 = list(map(lambda x: int(np.floor(x)) if np.floor(x) >= 0 else 0, [I_t_50[todayix]])),
-    pointinfectious_95 = list(map(lambda x: int(np.floor(x)) if np.floor(x) >= 0 else 0, [I_t_95[todayix]])),
-    pointinfectiousprevalence_05 = list(map(lambda x: 100*x/N if x >= 0 else 0.0, [I_t_05[todayix]])),
+    pointinfectious_975 = list(map(lambda x: int(np.floor(x)) if np.floor(x) >= 0 else 0, [I_t_975[todayix]])),
+    pointinfectiousprevalence_025 = list(map(lambda x: 100*x/N if x >= 0 else 0.0, [I_t_025[todayix]])),
     pointinfectiousprevalence_50 = list(map(lambda x: 100*x/N if x >= 0 else 0.0, [I_t_50[todayix]])),
-    pointinfectiousprevalence_95 = list(map(lambda x: 100*x/N if x >= 0 else 0.0, [I_t_95[todayix]])),
-    infectrate_05 = L_t_05[todayix],
+    pointinfectiousprevalence_975 = list(map(lambda x: 100*x/N if x >= 0 else 0.0, [I_t_975[todayix]])),
+    infectrate_025 = L_t_025[todayix],
     infectrate_50 = L_t_50[todayix],
-    infectrate_95 = L_t_95[todayix],
+    infectrate_975 = L_t_975[todayix],
     )
 
   dfnowr = pd.DataFrame(data_now)
