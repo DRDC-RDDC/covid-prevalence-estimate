@@ -86,8 +86,12 @@ if __name__=='__main__':
     model = config['model']
     settings = config['settings']
 
-    dataurl = "https://stevenhorn.gitlab.io/covid-prevalence/results/latest_results.csv"
-    df = pd.read_csv(dataurl, parse_dates=['analysisTime'])
+    try:
+        dataurl = "https://stevenhorn.gitlab.io/covid-prevalence/results/latest_results.csv"
+        df = pd.read_csv(dataurl, parse_dates=['analysisTime'])
+    except:
+        # results file not there - create dummy
+        df = None
 
     # create worker jobs for each population
     log.info("Processing populations")
@@ -101,8 +105,8 @@ if __name__=='__main__':
                 dt = datetime.datetime.utcnow() - lastrun
                 dt_hours = dt.to_list()[0].total_seconds()/60/60
             except Exception as e:
-                log.error('error checking last run time, assume 24. ' + str(e))
-                dt_hours = 24
+                log.error('error checking last run time, assume 96. ' + str(e))
+                dt_hours = 96
 
             # This is the frequency with which to run the model for this region
             max_frequency = config['settings']['frequency']
