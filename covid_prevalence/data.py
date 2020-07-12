@@ -45,6 +45,9 @@ def savecsv(this_model, trace, pop):
       popinfo = infodf.loc[lambda df: (df['Province_State'] == pop["source_state"]) & (df['Admin2'] == pop["source_region"])]
     FIPS = popinfo["FIPS"].to_numpy()[0]
 
+  # Make sure it's an integer
+  FIPS = int(FIPS)
+
   # Timeseries
   filepath='/content/covid-prevalence/results/latest_timeseries.csv'
   
@@ -140,6 +143,9 @@ def savecsv(this_model, trace, pop):
     )
 
   dfnowr = pd.DataFrame(data_now)
+
+  # make sure FIPS is saved as an integer
+  dfnowr['FIPS'] = dfnowr['FIPS'].astype(int)
 
   filepath='/content/covid-prevalence/results/latest_results.csv'
 
