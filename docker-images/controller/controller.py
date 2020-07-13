@@ -99,15 +99,25 @@ if __name__=='__main__':
     for pop in config['populations']: # pop = config['populations'][1]
         if pop['run'] == True:
             # Check when it was last run
+            folder = pop["source_country"] + pop["source_state"] + ("" if pop["source_region"] == None else pop["source_region"])
+            folder = folder.replace(' ','')  # folder = 'USColoradoElPaso'
             try:
-                folder = pop["source_country"] + pop["source_state"] + ("" if pop["source_region"] == None else pop["source_region"])
-                folder = folder.replace(' ','')  # folder = 'USColoradoElPaso'
                 lastrun = df[df['nameid'] == folder]['analysisTime']
                 dt = datetime.datetime.utcnow() - lastrun
                 dt_hours = dt.to_list()[0].total_seconds()/60/60
             except Exception as e:
-                log.error('error checking last run time, assume 200 hours. ' + str(e))
-                dt_hours = 200
+
+                # Try check if latest is in folder
+                try:
+                    savefolder = '/content/covid-prevalence/results/latest/' + folder
+                    rfilepath = savefolder + '/' + folder + '_latest.csv'
+                    dfr = pd.read_csv(rfilepath, parse_dates=['analysisTime'])
+                    lastrun = df[df['nameid'] == folder]['analysisTime']
+                    dt = datetime.datetime.utcnow() - lastrun
+                    dt_hours = dt.to_list()[0].total_seconds()/60/60
+                except Exception as e:
+                    log.error('error checking last run time, assume 200 hours. ' + str(e))
+                    dt_hours = 200
 
             # This is the frequency with which to run the model for this region
             max_frequency = config['settings']['frequency']

@@ -146,7 +146,14 @@ def savecsv(this_model, trace, pop):
   dfnowr = pd.DataFrame(data_now)
 
   filepath='/content/covid-prevalence/results/latest_results.csv'
-
+  rfilepath = savefolder + '/' + folder + '_latest.csv'
+  # save
+  #dfnowr=dfnowr.sort_values(by=['nameid'])
+  # make sure FIPS is saved as an integer
+  dfnowr['FIPS'] = dfnowr['FIPS'].astype(int)
+  dfnowr.to_csv(rfilepath, index=False, float_format='%.8f')
+  dfnow = dfnowr
+  '''
   if os.path.isfile(filepath):
     df = pd.read_csv(filepath)
     
@@ -167,7 +174,7 @@ def savecsv(this_model, trace, pop):
   # make sure FIPS is saved as an integer
   dfnow['FIPS'] = dfnow['FIPS'].astype(int)
   dfnow.to_csv(filepath, index=False, float_format='%.8f')
-
+  '''
   return dfu, dfnow
   
 
