@@ -30,6 +30,7 @@ WORKDIR /home/simuser
 USER simuser
 
 COPY controller.py .
+COPY loadregion.py .
 
 # Run the main program
 CMD [ "python", "./controller.py" ]

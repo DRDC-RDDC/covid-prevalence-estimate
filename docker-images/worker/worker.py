@@ -49,10 +49,13 @@ from datetime import timezone
 from dateutil.parser import parse, isoparse
 from pathlib import Path
 
+import pymc3.stats as pms
+
 import covid_prevalence as covprev
 from covid_prevalence.models import SEIRa     # Our model
 from covid_prevalence.plots import plot_data, plot_fit, plot_IFR, plot_posteriors, plot_prevalence
 from covid_prevalence.repository import gitpush
+from covid_prevalence.utility import get_folders
 
 # this is used for json serialization of dates
 def converters(o):
@@ -138,7 +141,12 @@ if __name__=='__main__':
     ispq = False
     if not pq.empty():
       item = pq.lease(lease_secs=timelimit, block=True, timeout=60)
-      ispq = True
+      if item is not None:
+        ispq = True
+        log.info("Processing from queue.")
+      else:
+        # in case another worker got the priority
+        item = q.lease(lease_secs=timelimit, block=True, timeout=60)
     else:
       item = q.lease(lease_secs=timelimit, block=True, timeout=60)
 
@@ -152,6 +160,8 @@ if __name__=='__main__':
 
       pop = task['pop']
       log.info("Working on " + pop['name'])
+
+      savefolder, folder = get_folders(pop)
 
       model = task['model']
       settings = task['settings']
@@ -215,7 +225,15 @@ if __name__=='__main__':
             pr_sigma_lambda_0=pop['sigma_lambda_0'],
             change_points_list=change_points,
         )
-        pa = pm.Beta(name="pa", alpha=model['pa_a'], beta=model['pa_b'])
+
+        if model['pa'] == 'Beta':
+          pa = pm.Beta(name="pa", alpha=model['pa_a'], beta=model['pa_b'])
+        elif model['pa'] == 'BoundedNormal':
+          BoundedNormal = pm.Bound(pm.Normal, lower=model['pa_lower'], upper=model['pa_upper'])
+          pa = BoundedNormal(name="pa", mu=model['pa_mu'], sigma=model['pa_sigma'])
+        else:
+          pa = pm.Uniform(name="pa", lower=0.15, upper=0.5)
+
         pu = pm.Uniform(name="pu", lower=model['pu_a'], upper=model['pu_b'])
         mu = pm.Lognormal(name="mu", mu=np.log(1 / model['asym_recover_mu_days']), sigma=model['asym_recover_mu_sigma'])    # Asymptomatic infectious period until recovered
         mus = pm.Lognormal(name="mus", mu=np.log(1 / model['sym_recover_mu_days']), sigma=model['sym_recover_mu_sigma'])   # Pre-Symptomatic infectious period until showing symptoms -> isolated
@@ -283,6 +301,19 @@ if __name__=='__main__':
         log.info('Updating CSV files')
         try:
           _, _ = covprev.data.savecsv(this_model, trace, pop)
+        except Exception as e:
+          log.error(str(e))
+
+        log.info('Saving statistics')
+        try:
+          divs = trace.get_sampler_stats('diverging')
+          llostat = pms.loo(trace,pointwise=True, scale="log")
+          llostat_str = str(llostat)
+          savepath = savefolder + '/'+folder+'_stats.txt'
+          with open(savepath, 'w') as f:
+            f.write('%d Divergences \n' % np.sum(divs))
+            f.write(llostat_str)
+
         except Exception as e:
           log.error(str(e))
 

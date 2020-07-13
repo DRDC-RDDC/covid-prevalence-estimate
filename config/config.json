@@ -1,7 +1,11 @@
 {
   "model": {
     "pa_description": "Prior distribution for probability that an infection will be asymptomatic.",
-    "pa": "Beta",
+    "pa": "BoundedNormal",
+    "pa_lower": 0.15,
+    "pa_upper": 0.5,
+    "pa_mu": 0.25,
+    "pa_sigma": 0.1,
     "pa_a": 4,
     "pa_b": 11,
     "pu_description": "Prior distribution for probability that a case will not be tested",
@@ -18,9 +22,9 @@
     "sym_recover_mu_sigma": 1.75
   },
   "settings": {
-    "numsims": 100,
-    "numtune": 300,
-    "frequency": 72,
+    "numsims": 150,
+    "numtune": 500,
+    "frequency": 150,
     "ShowPreliminary": true
   },
   "populations": [

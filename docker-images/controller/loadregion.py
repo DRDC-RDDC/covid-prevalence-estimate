@@ -85,7 +85,20 @@ if __name__=='__main__':
     reqkey = (state, region, country)
 
     for pop in pops:
-        popkey = (pop['source_state'], pop['source_region'], pop['source_country'])
+
+        # This is how we handle wildcards 
+        # so you can call loadregion -P1 Canada * *    which loads all CAN
+        ss = pop['source_state']
+        if state == '*':
+            ss = '*'
+        sr = pop['source_region']
+        if region == '*':
+            sr = '*'
+        sc = pop['source_country']
+        if country == '*':
+            sc = '*'
+
+        popkey = (ss, sr, sc)
         if popkey != reqkey:
             continue
 
