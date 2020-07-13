@@ -1,4 +1,12 @@
-'''
+''' Controller pod for loading analysis jobs
+
+How this program works
+
+1 - Download the data from most recent repository
+2 - Check what areas need to be processed
+3 - Send the configuration and data to worker nodes via a redis message queue
+
+
     COVID-Prevalence  Copyright (c) Her Majesty the Queen in Right of Canada, 
     as represented by the Minister of National Defence, 2020.
 
@@ -16,13 +24,6 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
     The author can be contacted at steven.horn@forces.gc.ca
-'''
-
-''' How this program works
-
-1 - Download the data from most recent repository
-2 - Check what areas need to be processed
-3 - Send the configuration and data to worker nodes via a redis message queue
 '''
 
 import logging
@@ -105,7 +106,7 @@ if __name__=='__main__':
                 dt = datetime.datetime.utcnow() - lastrun
                 dt_hours = dt.to_list()[0].total_seconds()/60/60
             except Exception as e:
-                log.error('error checking last run time, assume 96. ' + str(e))
+                log.error('error checking last run time, assume 200 hours. ' + str(e))
                 dt_hours = 200
 
             # This is the frequency with which to run the model for this region
@@ -132,17 +133,23 @@ if __name__=='__main__':
                 log.info("Job Skipped: %s, no cases" % pop['name'])
                 continue
 
+            cases_per_day = np.sum(new_cases)/len(new_cases)
+
+            if cases_per_day < 0.2:
+                log.info("Job Skipped: %s, few cases reported" % pop['name'])
+                continue
+
             # filter for frequency by level of activity in region
             cases_prev10days = np.sum(new_cases[-10:])
-            if cases_prev10days == 0 and dt_hours > 24*5:
+            if cases_prev10days == 0 and dt_hours < 24*5:
                 log.info("Job Skipped: %s, no cases past 10 days and 5 days not passed" % pop['name'])
                 continue
 
-            if cases_prev10days > 0 and cases_prev10days < 10 and dt_hours > 24*3:
+            if cases_prev10days > 0 and cases_prev10days < 10 and dt_hours < 24*3:
                 log.info("Job Skipped: %s, < 10 cases past 10 days and 3 days not passed" % pop['name'])
                 continue
 
-            if cases_prev10days >= 10 and cases_prev10days < 30 and dt_hours > 24*2:
+            if cases_prev10days >= 10 and cases_prev10days < 30 and dt_hours < 24*2:
                 log.info("Job Skipped: %s, 10-30 cases past 10 days and 2 days not passed" % pop['name'])
                 continue
 
@@ -175,4 +182,6 @@ if __name__=='__main__':
     # The program will now end.  
     # The pod running it will close if restart=Never
 
-    #sleep(60*60*12)
+    # Keep the pod active for the next 12 hours.  This is useful for debugging by
+    # connecting into the pod shell
+    sleep(60*60*12)
