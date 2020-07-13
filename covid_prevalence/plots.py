@@ -40,8 +40,6 @@ def plot_data(this_model, new_cases, pop, settings, closeplot=True):
                          end=this_model.data_begin + datetime.timedelta(days=new_cases.shape[0]-1) )
 
   shift = 0#7
-  x_data2 = pd.date_range(start=this_model.data_begin- datetime.timedelta(shift), 
-                          end=this_model.data_begin + datetime.timedelta(days=new_cases.shape[0]-1) )
 
   #this_model.sim_begin
 
@@ -64,8 +62,8 @@ def plot_data(this_model, new_cases, pop, settings, closeplot=True):
   if closeplot:
     plt.close()
 
-
 def plot_fit(this_model, trace, new_cases, pop, settings, closeplot=True):
+  N = this_model.N_population
   log.info('Plotting Fit')
   ShowPreliminary = settings['ShowPreliminary']
   popname = pop['name']
@@ -75,7 +73,6 @@ def plot_fit(this_model, trace, new_cases, pop, settings, closeplot=True):
   I_t = trace["new_detections"][:, None]
   I_t = trace["new_cases"][:, None]
   numpts = I_t.shape[0]
-  trimend = -10
 
   I_t_05 = []
   I_t_50 = []
@@ -87,7 +84,6 @@ def plot_fit(this_model, trace, new_cases, pop, settings, closeplot=True):
     I_t_50.append(b)
     I_t_95.append(c)
 
-  x_data = pd.date_range(start=this_model.data_begin, end=this_model.data_begin + datetime.timedelta(days=I_t.shape[2]-1) )
   x_data_in = pd.date_range(start=this_model.data_begin, end=this_model.data_end)
   x_sim = pd.date_range(start=this_model.sim_begin, end=this_model.sim_end )
 
@@ -105,7 +101,7 @@ def plot_fit(this_model, trace, new_cases, pop, settings, closeplot=True):
 
   ax1.plot(x_sim,I_t_50, label="new cases model")
   plt.legend()
-  plt.title("Model comparison to data %s" % popname)
+  plt.title("Model comparison to data %s, pop. = %s" % (popname, N))
   plt.xticks(rotation=45)
   plt.xlabel("Day")
 
@@ -123,6 +119,7 @@ def plot_fit(this_model, trace, new_cases, pop, settings, closeplot=True):
   log.info('Fit plot saved to %s' % savepath)
 
 def plot_posteriors(this_model, trace, pop, settings):
+  N = this_model.N_population
   # spreading rate fit
   ShowPreliminary = settings['ShowPreliminary']
   savefolder, folder = ut.get_folders(pop)
@@ -189,7 +186,7 @@ def plot_posteriors(this_model, trace, pop, settings):
 
   plt.xticks(rotation=45)
   plt.xlabel("Day")
-  plt.title("Probability infectious person will infect someone else in a day ($\lambda$)")
+  plt.title("Probability infectious person will infect someone else in a day ($\lambda$) \n %s, pop. = %s" % (pop['name'], N))
 
   plt.tight_layout()
   plt.savefig(savefolder + '/'+folder+'_lambda.png')
@@ -197,7 +194,6 @@ def plot_posteriors(this_model, trace, pop, settings):
 
 
 # This code needs major cleanup
-
 def plot_prevalence(this_model, trace, pop, settings, closeplot=True): #closeplot=False
   # this is the infected asymptomatic AND symptimatic
   ShowPreliminary = settings['ShowPreliminary']
@@ -213,9 +209,9 @@ def plot_prevalence(this_model, trace, pop, settings, closeplot=True): #closeplo
   p0 = 100.0*I_t/N * lambda_t
   Ip_t = I_t + E_t + R_t
 
-  I_t_05 = []
+  I_t_025 = []
   I_t_50 = []
-  I_t_95 = []
+  I_t_975 = []
   tx = np.arange(0,I_t.shape[2])
 
   for t in tx:
@@ -226,9 +222,9 @@ def plot_prevalence(this_model, trace, pop, settings, closeplot=True): #closeplo
       b = 0
     if c < 0:
       c = 0
-    I_t_05.append(a)
+    I_t_025.append(a)
     I_t_50.append(b)
-    I_t_95.append(c)
+    I_t_975.append(c)
 
   Ip_t_05 = []
   Ip_t_50 = []
@@ -306,13 +302,17 @@ def plot_prevalence(this_model, trace, pop, settings, closeplot=True): #closeplo
   plt.plot(x_sim,Ip_t_50, label="Prevalence")
   plt.fill_between(x_sim,Ip_t_05,Ip_t_95,lw=0,alpha=0.1, label="95CI")
   maxy = np.max(Ip_t_95)
+  if maxy < 0.01:
+    plt.ylim(0,0.01)
+    maxy = 0.01
+
   plt.plot([datetime.datetime.today(), datetime.datetime.today()], [0,maxy],'r-', label="Today")
   plt.ylabel("%")
   plt.xticks(rotation=45)
   plt.title("Prevalence (E+I+Q) of COVID-19 \n %s, pop. = %s" % (popname, N))
   plt.xlabel("Date")
   start, end = ax1.get_ylim()
-  locs, labels = plt.yticks()
+  locs, _ = plt.yticks()
 
   ax2 = ax1.twinx()
   ax2.set_ylim(start,end)
@@ -333,14 +333,24 @@ def plot_prevalence(this_model, trace, pop, settings, closeplot=True): #closeplo
     plt.close()
 
   fig, ax1 = plt.subplots()
+
+  # Cap the upper bound to 100%
+  I_t_50 = np.array(I_t_50)
+  I_t_50[I_t_50 > 100] = 100
+
   plt.plot(x_sim,I_t_50, label="Prevalence")
-  plt.fill_between(x_sim,I_t_05,I_t_95,lw=0,alpha=0.1, label="95CI")
+
+  # Cap the upper bound to 100%
+  I_t_975 = np.array(I_t_975)
+  I_t_975[I_t_975 > 100] = 100
+
+  plt.fill_between(x_sim,I_t_025,I_t_975,lw=0,alpha=0.1, label="95CI")
   plt.title("Infectious prevalence ($I$)\n %s, pop. = %s" % (popname, N))
   plt.ylabel("%")
   plt.xlabel("Date")
   plt.xticks(rotation=45)
   start, end = ax1.get_ylim()
-  locs, labels = plt.yticks()
+  locs, _ = plt.yticks()
   ax2 = ax1.twinx()
   ax2.set_ylim(start,end)
   labs = ["%d" % (N*l/100.0) for l in locs]
@@ -349,7 +359,7 @@ def plot_prevalence(this_model, trace, pop, settings, closeplot=True): #closeplo
   plt.ylabel("# of infections")
   ax1.legend()
 
-  maxy = np.max(I_t_95)
+  maxy = np.max(I_t_975)
   plt.plot([datetime.datetime.today(), datetime.datetime.today()], [0,maxy],'r-', label="Today")
 
   if ShowPreliminary:
@@ -371,6 +381,9 @@ def plot_prevalence(this_model, trace, pop, settings, closeplot=True): #closeplo
   plt.xticks(rotation=45)
 
   maxy = np.max(p_t_95)
+  if maxy < 0.01:
+    plt.ylim(0,0.01)
+    maxy = 0.01
   plt.plot([datetime.datetime.today(), datetime.datetime.today()], [0,maxy],'r-', label="Today")
 
   if ShowPreliminary:
@@ -392,7 +405,7 @@ def plot_prevalence(this_model, trace, pop, settings, closeplot=True): #closeplo
   plt.fill_between(x_sim,Is_t_05,Is_t_95,lw=0,alpha=0.1, label="95CI")
   plt.ylabel("# of infections")
   plt.xticks(rotation=45)
-  plt.title("Prevalence of COVID-19 \n %s" % popname)
+  plt.title("Prevalence of COVID-19 \n %s, pop. = %s" % (popname, N))
   plt.legend()
   plt.xlabel("Date")
 
@@ -406,9 +419,9 @@ def plot_prevalence(this_model, trace, pop, settings, closeplot=True): #closeplo
   if closeplot:
     plt.close()
 
-  I_t_05 = []
+  I_t_025 = []
   I_t_50 = []
-  I_t_95 = []
+  I_t_975 = []
   trimend = -1
   trimstart = -45#60
   tx = np.arange(0,I_t.shape[2])
@@ -421,19 +434,22 @@ def plot_prevalence(this_model, trace, pop, settings, closeplot=True): #closeplo
       b = 0
     if c < 0:
       c = 0
-    I_t_05.append(a)
+    I_t_025.append(a)
     I_t_50.append(b)
-    I_t_95.append(c)
+    I_t_975.append(c)
 
   fig = plt.figure()
   plt.plot(x_sim[trimstart:trimend],I_t_50[trimstart:trimend], label="Prevalence")
-  plt.fill_between(x_sim[trimstart:trimend],I_t_05[trimstart:trimend],I_t_95[trimstart:trimend],lw=0,alpha=0.1, label="95CI")
-  maxy = np.max(I_t_95[trimstart:trimend])
+  plt.fill_between(x_sim[trimstart:trimend],I_t_025[trimstart:trimend],I_t_975[trimstart:trimend],lw=0,alpha=0.1, label="95CI")
+  maxy = np.max(I_t_975[trimstart:trimend])
+  if maxy < 1:
+    plt.ylim(0,1)
+    maxy = 1
   plt.plot([datetime.datetime.today(), datetime.datetime.today()], [0,maxy],'r-', label="Today")
   #plt.yscale('log')
   #plt.ylim((0,10))
   plt.xticks(rotation=45)
-  plt.title("Prevalence of COVID-19 \n %s" % popname)
+  plt.title("Prevalence of COVID-19 \n %s, pop. = %s" % (popname, N))
   plt.legend()
   plt.xlabel("Date")
   plt.ylabel("# undetected infections")
