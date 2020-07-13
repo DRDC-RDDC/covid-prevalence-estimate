@@ -81,6 +81,10 @@ repo_path = "/content/covid-prevalence"
 
 if __name__=='__main__':
   q = RedisWQ(name=queuename, host=host)
+
+  # priority queue
+  pq = RedisWQ(name=queuename + 'p1', host=host)
+
   log.info("Worker with sessionID: " +  q.sessionID())
   log.info("Initial queue state: empty=" + str(q.empty()))
 
@@ -127,10 +131,16 @@ if __name__=='__main__':
   timed_out = False
   num_wait_loops = 0
   while not timed_out and not q.empty():
-
     # This sets up a loop to get data from the queue.  Continues if 
     # 30 seconds has elapsed - logging a waiting message.
-    item = q.lease(lease_secs=timelimit, block=True, timeout=60)
+
+    # if we have something in the prioiry queue, then that gets processed next
+    ispq = False
+    if not pq.empty():
+      item = pq.lease(lease_secs=timelimit, block=True, timeout=60)
+      ispq = True
+    else:
+      item = q.lease(lease_secs=timelimit, block=True, timeout=60)
 
     if item is not None:
       num_wait_loops = 0
@@ -344,7 +354,11 @@ if __name__=='__main__':
         log.error('Unable to commit %s' % pop['name'])
 
       # Mark as completed and remove from work queue.
-      q.complete(item)
+      if ispq:
+        pq.complete(item)
+      else:
+        q.complete(item)
+
       log.info("Completed " + pop['name'])
     else:
       num_wait_loops = num_wait_loops + 1
