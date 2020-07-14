@@ -61,6 +61,7 @@ def SEIRa(
 
     lambda_t = tt.exp(lambda_t_log)
     new_I_0 = tt.zeros_like(Ia_begin)
+    new_E_0 = tt.zeros_like(Ia_begin)
 
     # Runs SIRa model:
     def next_day(lambda_t, # infection rate
@@ -71,6 +72,7 @@ def SEIRa(
                  Ia_t,     # number of asymptomatic-infected 
                  Is_t,     # number of pre-symptomatic infected
                  _,        # not used
+                 ne,       # not used - for saving new exposures
                  mu,       # recovery rate (asymptomatic)
                  mus,
                  gamma,    # incubation rate
@@ -102,7 +104,6 @@ def SEIRa(
         Ia_t = Ia_t + new_Ia_t - mu * Ia_t  # recover as mu
         Is_t = Is_t + new_Is_t - detected   # isolate as lognorm
         R_t = mu * Ia_t + detected          # resolved either recovered or isolated
-
         new_I_t = tt.clip(new_I_t, 0, N/3)  # for stability
         Ia_t = tt.clip(Ia_t, -1, N-1)       # for stability
         Is_t = tt.clip(Is_t, -1, N-1)       # for stability
@@ -110,7 +111,7 @@ def SEIRa(
         S_t  = tt.clip(S_t,  -1, N)         # bound to population
         R_t  = tt.clip(R_t,  -1, N)         # bound to population
 
-        return S_t, E_t, E_cum_t, R_t, Ia_t, Is_t, detected
+        return S_t, E_t, E_cum_t, R_t, Ia_t, Is_t, detected, new_E_t
 
     # theano scan returns two tuples, first one containing a time series of
     # what we give in outputs_info : S, I, new_I
@@ -124,11 +125,12 @@ def SEIRa(
             R_begin,
             Ia_begin,
             Is_begin,
-            new_I_0
+            new_I_0,
+            new_E_0
           ],
         non_sequences=[mu, mus, gamma, pa, pu, N],
     )
-    S_t, E_t, Ecum_t, R_t, Ia_t, Is_t, new_detections = outputs
+    S_t, E_t, Ecum_t, R_t, Ia_t, Is_t, new_detections, new_E_t = outputs
 
     # This is the population susceptible
     if name_S_t is not None:
@@ -138,6 +140,7 @@ def SEIRa(
     if name_I_t is not None:
         pm.Deterministic(name_I_t, Ia_t + Is_t)
 
+    pm.Deterministic("new_E_t", new_E_t)
     pm.Deterministic("E_t", E_t)
     pm.Deterministic("Ecum_t", Ecum_t)
     pm.Deterministic("R_t", R_t)

@@ -101,7 +101,7 @@ def plot_fit(this_model, trace, new_cases, pop, settings, closeplot=True):
 
   ax1.plot(x_sim,I_t_50, label="new cases model")
   plt.legend()
-  plt.title("Model comparison to data %s, pop. = %s" % (popname, N))
+  plt.title("Model comparison to data \n %s, pop. = %s" % (popname, N))
   plt.xticks(rotation=45)
   plt.xlabel("Day")
 
@@ -192,7 +192,6 @@ def plot_posteriors(this_model, trace, pop, settings):
   plt.savefig(savefolder + '/'+folder+'_lambda.png')
   plt.close()
 
-
 # This code needs major cleanup
 def plot_prevalence(this_model, trace, pop, settings, closeplot=True): #closeplot=False
   # this is the infected asymptomatic AND symptimatic
@@ -201,13 +200,20 @@ def plot_prevalence(this_model, trace, pop, settings, closeplot=True): #closeplo
   savefolder, folder = ut.get_folders(pop)
   trimend = -1#-25
   trimstart=0
+
   N = this_model.N_population
   E_t = trace["E_t"][:, None]
   R_t = trace["R_t"][:, None]
-  I_t = trace["I_t"][:, None] 
+  I_t = trace["I_t"][:, None]
+  new_E_t= trace["new_E_t"][:, None] 
   lambda_t, x = cov19.plot._get_array_from_trace_via_date(this_model, trace, "lambda_t")
   p0 = 100.0*I_t/N * lambda_t
   Ip_t = I_t + E_t + R_t
+
+  # we check for degenerate/oscillating solutions if nne < 0 in the trace
+  nne = new_E_t/E_t
+  degens = nne < 0
+  degen = np.array([np.sum(d[0])>0 for d in degens])
 
   I_t_025 = []
   I_t_50 = []
@@ -215,7 +221,7 @@ def plot_prevalence(this_model, trace, pop, settings, closeplot=True): #closeplo
   tx = np.arange(0,I_t.shape[2])
 
   for t in tx:
-    a,b,c = np.percentile(100*I_t[:,0,t]/N,[2.5,50,97.5])
+    a,b,c = np.percentile(100*I_t[:,0,t][degen==False]/N,[2.5,50,97.5])
     if a < 0:
       a = 0
     if b < 0:
@@ -232,7 +238,7 @@ def plot_prevalence(this_model, trace, pop, settings, closeplot=True): #closeplo
   tx = np.arange(0,Ip_t.shape[2])
 
   for t in tx:
-    a,b,c = np.percentile(100*Ip_t[:,0,t]/N,[2.5,50,97.5])
+    a,b,c = np.percentile(100*Ip_t[:,0,t][degen==False]/N,[2.5,50,97.5])
     if a < 0:
       a = 0
     if b < 0:
@@ -249,7 +255,7 @@ def plot_prevalence(this_model, trace, pop, settings, closeplot=True): #closeplo
   tx = np.arange(0,p0.shape[2])
   N = this_model.N_population
   for t in tx:
-    a,b,c = np.percentile(p0[:,0,t],[2.5,50,97.5])
+    a,b,c = np.percentile(p0[:,0,t][degen==False],[2.5,50,97.5])
     if a < 0:
       a = 0
     if b < 0:
@@ -267,7 +273,7 @@ def plot_prevalence(this_model, trace, pop, settings, closeplot=True): #closeplo
   tx = np.arange(0,Ia_t.shape[2])
   for t in tx:
     #a,b,c = np.percentile(100*Ia_t[:,0,t]/N,[5,50,95])
-    a,b,c = np.percentile(Ia_t[:,0,t],[2.5,50,97.5])
+    a,b,c = np.percentile(Ia_t[:,0,t][degen==False],[2.5,50,97.5])
     if a < 0:
       a = 0
     if b < 0:
@@ -285,7 +291,7 @@ def plot_prevalence(this_model, trace, pop, settings, closeplot=True): #closeplo
   tx = np.arange(0,Is_t.shape[2])
   for t in tx:
     #a,b,c = np.percentile(100*Is_t[:,0,t]/N,[5,50,95])
-    a,b,c = np.percentile(Is_t[:,0,t],[2.5,50,97.5])
+    a,b,c = np.percentile(Is_t[:,0,t][degen==False],[2.5,50,97.5])
     if a < 0:
       a = 0
     if b < 0:

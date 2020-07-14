@@ -102,6 +102,9 @@ if __name__=='__main__':
             folder = pop["source_country"] + pop["source_state"] + ("" if pop["source_region"] == None else pop["source_region"])
             folder = folder.replace(' ','')  # folder = 'USColoradoElPaso'
             try:
+                savefolder = '/content/covid-prevalence/results/latest/' + folder
+                rfilepath = savefolder + '/' + folder + '_latest.csv'
+                dfr = pd.read_csv(rfilepath, parse_dates=['analysisTime'])
                 lastrun = df[df['nameid'] == folder]['analysisTime']
                 dt = datetime.datetime.utcnow() - lastrun
                 dt_hours = dt.to_list()[0].total_seconds()/60/60
@@ -109,9 +112,6 @@ if __name__=='__main__':
 
                 # Try check if latest is in folder
                 try:
-                    savefolder = '/content/covid-prevalence/results/latest/' + folder
-                    rfilepath = savefolder + '/' + folder + '_latest.csv'
-                    dfr = pd.read_csv(rfilepath, parse_dates=['analysisTime'])
                     lastrun = df[df['nameid'] == folder]['analysisTime']
                     dt = datetime.datetime.utcnow() - lastrun
                     dt_hours = dt.to_list()[0].total_seconds()/60/60

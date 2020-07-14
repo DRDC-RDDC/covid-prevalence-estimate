@@ -45,7 +45,7 @@ def savecsv(this_model, trace, pop):
       popinfo = infodf.loc[lambda df: (df['Province_State'] == pop["source_state"]) & (df['Admin2'] == pop["source_region"])]
     FIPS = popinfo["FIPS"].to_numpy()[0]
 
-  # Make sure it's an integer
+  # Make sure it's an integer, otherwise appears as float in CSV
   FIPS = int(FIPS)
 
   # Timeseries
@@ -55,13 +55,18 @@ def savecsv(this_model, trace, pop):
   E_t = trace["E_t"][:, None]
   R_t = trace["R_t"][:, None]
   I_t = trace["I_t"][:, None]
+  new_E_t= trace["new_E_t"][:, None] 
   lambda_t, x = cov19.plot._get_array_from_trace_via_date(this_model, trace, "lambda_t")
-  #p0 = 100.0*I_t/N * lambda_t
   Ip_t = I_t + E_t + R_t
+  
+  # we check for degenerate/oscillating solutions if nne < 0 in the trace
+  nne = new_E_t/E_t
+  degens = nne < 0
+  degen = np.array([np.sum(d[0])>0 for d in degens])
 
-  Prev_t_025, Prev_t_50, Prev_t_975 = ut.get_percentile_timeseries(Ip_t)
-  I_t_025, I_t_50, I_t_975 = ut.get_percentile_timeseries(I_t)
-  L_t_025, L_t_50, L_t_975 = ut.get_percentile_timeseries(lambda_t, islambda=True)
+  Prev_t_025, Prev_t_50, Prev_t_975 = ut.get_percentile_timeseries(Ip_t, degen=degen)
+  I_t_025, I_t_50, I_t_975 = ut.get_percentile_timeseries(I_t, degen=degen)
+  L_t_025, L_t_50, L_t_975 = ut.get_percentile_timeseries(lambda_t, islambda=True, degen=degen)
 
   data = dict(
     FIPS = FIPS,

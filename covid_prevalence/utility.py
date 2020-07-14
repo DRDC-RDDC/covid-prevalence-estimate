@@ -28,7 +28,7 @@ def get_folders(pop):
   Path(savefolder).mkdir(parents=True, exist_ok=True)
   return savefolder,folder
 
-def get_percentile_timeseries(X_t, islambda=False):
+def get_percentile_timeseries(X_t, islambda=False, degen=None):
   ''' Get the 2.5%, 50%, and 97.5% percentiles from the time series.
 
   Parameters
@@ -49,11 +49,15 @@ def get_percentile_timeseries(X_t, islambda=False):
     ix = 1
   tx = np.arange(0,X_t.shape[ix])
 
+  # Handle degenerate filter, if none, consider all as non-degenerate
+  if degen is None:
+    degen = np.ones(len(X_t[:,0])) > 0
+
   for t in tx:
     if islambda:
-      a,b,c = np.percentile(X_t[:,t],[2.5,50,97.5])
+      a,b,c = np.percentile(X_t[:,t][degen==False],[2.5,50,97.5])
     else:
-      a,b,c = np.percentile(X_t[:,0,t],[2.5,50,97.5])
+      a,b,c = np.percentile(X_t[:,0,t][degen==False],[2.5,50,97.5])
     X_t_025.append(a)
     X_t_50.append(b)
     X_t_975.append(c)

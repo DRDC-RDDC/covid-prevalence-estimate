@@ -234,7 +234,13 @@ if __name__=='__main__':
         else:
           pa = pm.Uniform(name="pa", lower=0.15, upper=0.5)
 
-        pu = pm.Uniform(name="pu", lower=model['pu_a'], upper=model['pu_b'])
+        # Probability of undetected case
+        if model['pu'] == 'BoundedNormal':
+          BoundedNormal_pu = pm.Bound(pm.Normal, lower=model['pu_a'], upper=model['pu_b'])
+          pu = BoundedNormal_pu(name="pu", mu=model['pu_b']-model['pu_a'], sigma=0.2)
+        else:
+          pu = pm.Uniform(name="pu", upper=model['pu_b'], lower=model['pu_a'])
+
         mu = pm.Lognormal(name="mu", mu=np.log(1 / model['asym_recover_mu_days']), sigma=model['asym_recover_mu_sigma'])    # Asymptomatic infectious period until recovered
         mus = pm.Lognormal(name="mus", mu=np.log(1 / model['sym_recover_mu_days']), sigma=model['sym_recover_mu_sigma'])   # Pre-Symptomatic infectious period until showing symptoms -> isolated
         gamma = pm.Lognormal(name="gamma", mu=np.log(1 / model['gamma_mu_days']), sigma=model['gamma_mu_sigma'])
