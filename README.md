@@ -28,8 +28,6 @@ The following individuals have provided significant support and contribution to 
 * Mr. Michael Salciccoli
 * Mr. Alasdair Grant
 
-Open data is provided by 
-
 ## Citation
 
 Horn, S., COVID-19 prevalence estimation tool, DRDC CORA Software, 2020
