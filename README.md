@@ -22,11 +22,11 @@ git repository.
 
 The following individuals have provided significant support and contribution to this project:
 
-Dr. Ramzi Mirshak
-Dr. David Waller
-Dr. Steve Schofield
-Mr. Michael Salciccoli
-Mr. Alasdair Grant
+* Dr. Ramzi Mirshak
+* Dr. David Waller
+* Dr. Steve Schofield
+* Mr. Michael Salciccoli
+* Mr. Alasdair Grant
 
 Open data is provided by 
 
@@ -37,8 +37,9 @@ Horn, S., COVID-19 prevalence estimation tool, DRDC CORA Software, 2020
 ## References
 
 1. Mirshak and Horn (2020), The probability of a non-symptomatic individual bringing a coronavirus disease 2019 (COVID-19) infection into a group, DRDC Scientific Letter, DRDC-RDDC-2020-L116
-1. Berry I, Soucy J-PR, Tuite A, Fisman D. Open access epidemiologic data and an interactive dashboard to monitor the COVID-19 outbreak in Canada. CMAJ. 2020 Apr 14;192(15):E420. doi: https://doi.org/10.1503/cmaj.75262
-1. Dehning, J., Zierenberg, J., Spitzner, F. P., Wibral, M., Neto, J. P., Wilczek, M., & Priesemann, V. (2020). Inferring change points in the spread of COVID-19 reveals the effectiveness of interventions. Science.
+2. Berry I, Soucy J-PR, Tuite A, Fisman D. Open access epidemiologic data and an interactive dashboard to monitor the COVID-19 outbreak in Canada. CMAJ. 2020 Apr 14;192(15):E420. doi: https://doi.org/10.1503/cmaj.75262
+3. Dehning, J., Zierenberg, J., Spitzner, F. P., Wibral, M., Neto, J. P., Wilczek, M., & Priesemann, V. (2020). Inferring change points in the spread of COVID-19 reveals the effectiveness of interventions. Science.
+4. COVID-19 Data Repository by the Center for Systems Science and Engineering (CSSE) at Johns Hopkins University
 
 ## Licenses
 
