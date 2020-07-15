@@ -150,7 +150,7 @@ def savecsv(this_model, trace, pop):
 
   dfnowr = pd.DataFrame(data_now)
 
-  filepath='/content/covid-prevalence/results/latest_results.csv'
+  #filepath='/content/covid-prevalence/results/latest_results.csv'
   rfilepath = savefolder + '/' + folder + '_latest.csv'
   # save
   #dfnowr=dfnowr.sort_values(by=['nameid'])

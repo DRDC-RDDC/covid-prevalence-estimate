@@ -7,5 +7,6 @@ seaborn
 GitPython
 geopandas
 geojson
+redis
 folium==0.11.0
 git+https://github.com/Priesemann-Group/covid19_inference.git

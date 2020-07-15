@@ -39,12 +39,7 @@ def plot_data(this_model, new_cases, pop, settings, closeplot=True):
   x_data = pd.date_range(start=this_model.data_begin, 
                          end=this_model.data_begin + datetime.timedelta(days=new_cases.shape[0]-1) )
 
-  shift = 0#7
-
-  #this_model.sim_begin
-
   fig, ax1 = plt.subplots()
-
   plt.ylabel("Number of new cases reported")
   ax1.plot(x_data[:len(new_cases.values)], new_cases.values, 'b--', label="new cases data")
   plt.legend()
