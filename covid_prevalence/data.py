@@ -49,7 +49,7 @@ def savecsv(this_model, trace, pop):
   FIPS = int(FIPS)
 
   # Timeseries
-  filepath='/content/covid-prevalence/results/latest_timeseries.csv'
+  #filepath='/content/covid-prevalence/results/latest_timeseries.csv'
   
   N = pop['N']
   E_t = trace["E_t"][:, None]

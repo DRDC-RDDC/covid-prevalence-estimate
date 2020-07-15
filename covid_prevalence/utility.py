@@ -31,6 +31,8 @@ def get_folders(pop):
 def get_percentile_timeseries(X_t, islambda=False, degen=None):
   ''' Get the 2.5%, 50%, and 97.5% percentiles from the time series.
 
+  TODO: add other percentiles: c(0.01, 0.025, seq(0.05, 0.95, by = 0.05), 0.975, 0.99)
+
   Parameters
   ----------
   X_t : :array: float
@@ -40,6 +42,9 @@ def get_percentile_timeseries(X_t, islambda=False, degen=None):
   islambda : bool
       If true, this is for the spreading rate (lambda)
 
+  degen : :array: bool
+      If false, these runs are masked out.  Degenerate cases are when
+      the solution is valid for the model as defined, but not feasible.
   '''
   X_t_025 = []
   X_t_50 = []

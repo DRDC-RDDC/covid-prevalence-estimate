@@ -206,7 +206,7 @@ def plot_prevalence(this_model, trace, pop, settings, closeplot=True): #closeplo
   R_t = trace["R_t"][:, None]
   I_t = trace["I_t"][:, None]
   new_E_t= trace["new_E_t"][:, None] 
-  lambda_t, x = cov19.plot._get_array_from_trace_via_date(this_model, trace, "lambda_t")
+  lambda_t, _ = cov19.plot._get_array_from_trace_via_date(this_model, trace, "lambda_t")
   p0 = 100.0*I_t/N * lambda_t
   Ip_t = I_t + E_t + R_t
 
@@ -214,6 +214,10 @@ def plot_prevalence(this_model, trace, pop, settings, closeplot=True): #closeplo
   nne = new_E_t/E_t
   degens = nne < 0
   degen = np.array([np.sum(d[0])>0 for d in degens])
+
+  if np.sum(degen) == len(degen):
+    log.warn("All traces degenerate")
+    degens = np.ones(len(degen)) == 0 # all false
 
   I_t_025 = []
   I_t_50 = []

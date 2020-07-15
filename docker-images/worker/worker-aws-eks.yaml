@@ -3,7 +3,7 @@ kind: Job
 metadata:
   name: covprev-work
 spec:
-  parallelism: 50
+  parallelism: 2
   template:
     metadata:
       name: covprev-work
@@ -14,7 +14,7 @@ spec:
         imagePullPolicy: Always
         resources:
           limits:
-            cpu: "16"
+            cpu: 8000m
           requests:
-            cpu: "7.8"
+            cpu: 3950m
       restartPolicy: Never
