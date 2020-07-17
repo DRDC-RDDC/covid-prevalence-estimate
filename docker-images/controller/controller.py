@@ -163,6 +163,10 @@ if __name__=='__main__':
                 log.info("Job Skipped: %s, 10-30 cases past 10 days and 2 days not passed" % pop['name'])
                 continue
 
+            # don't run more frequently than this
+            if dt_hours < 24*2:
+                log.info("Job Skipped: %s, 2 days not passed" % pop['name'])
+                continue
             # > 30 past 10 days, run daily
 
             log.info("Job Queuing: %s, last run %d hours ago" % (pop['name'], dt_hours ))

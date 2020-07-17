@@ -19,11 +19,36 @@
 '''
 
 import logging
+import numpy as np
 import pymc3 as pm
+import datetime
 import theano.tensor as tt
 import theano
+from dateutil.parser import isoparse
 
 log = logging.getLogger(__name__)
+
+def dynamicChangePoints(pop):
+    bd = isoparse(pop['date_start']) # This is the first day of data
+    change_points_d2 = []
+    daystep = pop['daystep_lambda']
+    delta = datetime.datetime.utcnow() - bd
+    for dd in np.arange(daystep,delta.days-daystep,daystep,dtype="int"):
+        change_points_d2 += [
+            dict( # Fit the end
+                pr_mean_date_transient=bd+datetime.timedelta(days=int(dd)),
+                pr_median_transient_len=daystep/2,    # how fast is this transition?  
+                pr_sigma_transient_len=0.5,   # uncertainty how long to apply
+                pr_sigma_date_transient=2,    # uncertainty when applied
+                relative_to_previous=True,    
+                pr_factor_to_previous=1,      # mean moves log this -> i.e. log(1) = 0+
+                pr_median_lambda=0,           # normal offset rel to prev
+                pr_sigma_lambda=0.2,
+                )
+        ]
+
+    change_points = change_points_d2 
+    return change_points
 
 def SEIRa(
     lambda_t_log,             # spreading rate over time

@@ -131,6 +131,7 @@ def savecsv(this_model, trace, pop):
     region = pop['source_region'],
     analysisTime = analysis_date, 
     dates = x[todayix],
+    compute_time = pop['compute_time'],
     pointprevalence_025 = 100*Prev_t_025[todayix]/N if Prev_t_025[todayix] >= 0 else 0.0,
     pointprevalence_50 = 100*Prev_t_50[todayix]/N if Prev_t_50[todayix] >= 0 else 0.0,
     pointprevalence_975 = 100*Prev_t_975[todayix]/N if Prev_t_975[todayix] >= 0 else 0.0,

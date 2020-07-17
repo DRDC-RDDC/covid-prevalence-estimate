@@ -24,8 +24,8 @@ The following individuals have provided significant support and contribution to 
 
 * Dr. Ramzi Mirshak
 * Dr. David Waller
-* Dr. Steve Schofield
-* Mr. Michael Salciccoli
+* Dr. Steven Schofield
+* Mr. Michael A. Salciccoli
 * Mr. Alasdair Grant
 
 ## Citation

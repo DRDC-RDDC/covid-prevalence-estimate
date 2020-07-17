@@ -48,11 +48,11 @@ from covid19_inference.model import *
 from datetime import timezone
 from dateutil.parser import parse, isoparse
 from pathlib import Path
-
 import pymc3.stats as pms
 
 import covid_prevalence as covprev
 from covid_prevalence.models import SEIRa     # Our model
+from covid_prevalence.models import dynamicChangePoints # Dynamic spreading rate
 from covid_prevalence.plots import plot_data, plot_fit, plot_IFR, plot_posteriors, plot_prevalence
 from covid_prevalence.repository import gitpush
 from covid_prevalence.utility import get_folders
@@ -110,8 +110,6 @@ if __name__=='__main__':
   # Configure git user
   repo.config_writer().set_value("user", "name", "Steven Horn").release()
   repo.config_writer().set_value("user", "email", "steven@horn.work").release()
-
-
   repo.config_writer().set_value("mergetool", "keepBackup", "false").release()
 
   # we will work on a different branch
@@ -151,6 +149,8 @@ if __name__=='__main__':
       item = q.lease(lease_secs=timelimit, block=True, timeout=60)
 
     if item is not None:
+      start_time = datetime.datetime.utcnow()
+
       num_wait_loops = 0
       itemstr = item.decode("utf-8")
 
@@ -197,33 +197,12 @@ if __name__=='__main__':
         N_population=pop['N'],
       )
 
-      # Set up inferrence of infection rate
-      change_points_d2 = []
-      daystep = pop['daystep_lambda']
-      delta = datetime.datetime.utcnow() - bd
-
-      for dd in np.arange(daystep,delta.days-daystep,daystep,dtype="int"):
-        change_points_d2 += [
-          dict( # Fit the end
-                pr_mean_date_transient=bd+datetime.timedelta(days=int(dd)),
-                pr_median_transient_len=daystep/2,    # how fast is this transition?  
-                pr_sigma_transient_len=0.5,   # uncertainty how long to apply
-                pr_sigma_date_transient=2,    # uncertainty when applied
-                relative_to_previous=True,    
-                pr_factor_to_previous=1,      # mean moves log this -> i.e. log(1) = 0+
-                pr_median_lambda=0,           # normal offset rel to prev
-                pr_sigma_lambda=0.2,
-              )
-        ]
-
-      change_points = change_points_d2  # dynamic
-
       with cov19.model.Cov19Model(**params_model) as this_model:
         # apply change points, lambda is in log scale
         lambda_t_log = cov19.model.lambda_t_with_sigmoids(
-            pr_median_lambda_0=pop['median_lambda_0'],
-            pr_sigma_lambda_0=pop['sigma_lambda_0'],
-            change_points_list=change_points,
+            pr_median_lambda_0 = pop['median_lambda_0'],
+            pr_sigma_lambda_0 = pop['sigma_lambda_0'],  # The initial spreading rate
+            change_points_list = dynamicChangePoints(pop),  # these change points are periodic over time and inferred
         )
 
         if model['pa'] == 'Beta':
@@ -290,23 +269,30 @@ if __name__=='__main__':
         log.info('Starting sampling')
         trace = pm.sample(
           model=this_model, 
+          chains=settings['chains'],
           tune=numtune, 
           draws=numsims, 
           n_init=50000,     # we really should have converged by 50k
           init="advi+adapt_diag", cores=cores)
 
       # TODO: check if advi did not converge (bad model fit)
-
+      stop_time = datetime.datetime.utcnow()
+      elapsed_time = stop_time-start_time
+      pop['compute_time'] = str(elapsed_time)
       if pop['run'] == True:
-        log.info('Generating plots')
-        plot_fit(this_model, trace, new_cases, pop, settings)
-        plot_posteriors(this_model, trace, pop, settings)
-        plot_prevalence(this_model, trace, pop, settings)
-        #plot_IFR(this_model, trace, pop, settings, cum_deaths)
-        #dft, dfn = savecsv(this_model, trace, pop)
         log.info('Updating CSV files')
         try:
           _, _ = covprev.data.savecsv(this_model, trace, pop)
+        except Exception as e:
+          log.error(str(e))
+
+        log.info('Generating plots')
+        try:
+          plot_fit(this_model, trace, new_cases, pop, settings)
+          #plot_posteriors(this_model, trace, pop, settings)
+          plot_prevalence(this_model, trace, pop, settings)
+          #plot_IFR(this_model, trace, pop, settings, cum_deaths)
+          #dft, dfn = savecsv(this_model, trace, pop)
         except Exception as e:
           log.error(str(e))
 

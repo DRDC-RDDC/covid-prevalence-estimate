@@ -115,6 +115,7 @@ def plot_fit(this_model, trace, new_cases, pop, settings, closeplot=True):
 
 def plot_posteriors(this_model, trace, pop, settings):
   N = this_model.N_population
+
   # spreading rate fit
   ShowPreliminary = settings['ShowPreliminary']
   savefolder, folder = ut.get_folders(pop)
@@ -122,6 +123,7 @@ def plot_posteriors(this_model, trace, pop, settings):
   pu = trace["pu"][:, None]
   I_t = trace["I_t"][:, None]
 
+  ''' Disable for now
   plt.figure()
   #plt.subplot(1,2,1)
   sns.distplot(pa, hist = False, kde = True,
@@ -159,6 +161,7 @@ def plot_posteriors(this_model, trace, pop, settings):
   if "gamma" in trace:
     gamma = trace["gamma"][:, None]
     plt.plot(1/gamma, 'g-')
+  '''
 
   lambda_t, x = cov19.plot._get_array_from_trace_via_date(this_model, trace, "lambda_t")
 
@@ -167,7 +170,6 @@ def plot_posteriors(this_model, trace, pop, settings):
   l_t_05 = []
   l_t_50 = []
   l_t_95 = []
-  #print (lambda_t.shape[1])
   tx = np.arange(0,y.shape[1])
   for t in tx:
     a,b,c = np.percentile(y[:,t],[2.5,50,97.5])
@@ -314,7 +316,7 @@ def plot_prevalence(this_model, trace, pop, settings, closeplot=True): #closeplo
   plt.plot([datetime.datetime.today(), datetime.datetime.today()], [0,maxy],'r-', label="Today")
   plt.ylabel("%")
   plt.xticks(rotation=45)
-  plt.title("Prevalence (E+I+Q) of COVID-19 \n %s, pop. = %s" % (popname, N))
+  plt.title("Prevalence of COVID-19 \n %s, pop. = %s" % (popname, N))
   plt.xlabel("Date")
   start, end = ax1.get_ylim()
   locs, _ = plt.yticks()
@@ -337,6 +339,7 @@ def plot_prevalence(this_model, trace, pop, settings, closeplot=True): #closeplo
   if closeplot:
     plt.close()
 
+  '''
   fig, ax1 = plt.subplots()
 
   # Cap the upper bound to 100%
@@ -400,8 +403,9 @@ def plot_prevalence(this_model, trace, pop, settings, closeplot=True): #closeplo
   plt.savefig(savefolder + '/'+folder+'_p0.png')
   if closeplot:
     plt.close()
-
+'''
   # Sym and asym
+  ''' Removed this plot for now
   fig, ax1 = plt.subplots()
 
   plt.plot(x_sim,Ia_t_50, label="Asymptomatic or undetected")
@@ -423,6 +427,7 @@ def plot_prevalence(this_model, trace, pop, settings, closeplot=True): #closeplo
   plt.savefig(savefolder + '/'+folder+'_a_s.png')
   if closeplot:
     plt.close()
+  '''
 
   I_t_025 = []
   I_t_50 = []

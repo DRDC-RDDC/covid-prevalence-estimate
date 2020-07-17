@@ -22,7 +22,8 @@
     "sym_recover_mu_sigma": 1.75
   },
   "settings": {
-    "numsims": 30,
+    "numsims": 20,
+    "chains": 8,
     "numtune": 100,
     "frequency": 150,
     "ShowPreliminary": true
