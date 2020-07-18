@@ -20,9 +20,12 @@ COPY requirements.txt /tmp/
 
 RUN pip install -r /tmp/requirements.txt
 
+# Set up users
 RUN useradd --create-home simuser
+RUN groupadd simgroup
+RUN usermod -a -G simgroup simuser
 
-# This is where the simulation data will be placed
+# This is where temporary simulation data will be placed
 RUN mkdir -p /content
 RUN chown simuser /content
 

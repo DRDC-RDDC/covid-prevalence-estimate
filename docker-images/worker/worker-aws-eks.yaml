@@ -3,7 +3,7 @@ kind: Job
 metadata:
   name: covprev-work
 spec:
-  parallelism: 2
+  parallelism: 12
   template:
     metadata:
       name: covprev-work
@@ -11,6 +11,9 @@ spec:
       containers:
       - name: covprev-work
         image: 979276261708.dkr.ecr.ca-central-1.amazonaws.com/covprev-work:latest
+        volumeMounts:
+          - name: persistent-storage
+            mountPath: /data
         imagePullPolicy: Always
         resources:
           limits:
@@ -18,3 +21,7 @@ spec:
           requests:
             cpu: 15.9
       restartPolicy: Never
+      volumes:
+        - name: persistent-storage
+          persistentVolumeClaim:
+            claimName: efs-claim

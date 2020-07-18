@@ -80,7 +80,10 @@ host = os.getenv("REDIS_SERVICE_HOST", default="redis")
 queuename = os.getenv('redis_worker_queue', default='covidprev')
 oauth = os.getenv('gitlab_oauth', default='53gZwasv6UmExxrohqPm')
 timelimit = 60*60*1 # these hours should be enough per region - make env?
-repo_path = "/content/covid-prevalence"
+repo_path = "/data/covid-prevalence"
+
+# push the results at end.  If false, they mush be manually pushed
+always_push = False
 
 if __name__=='__main__':
   q = RedisWQ(name=queuename, host=host)
@@ -91,42 +94,27 @@ if __name__=='__main__':
   log.info("Worker with sessionID: " +  q.sessionID())
   log.info("Initial queue state: empty=" + str(q.empty()))
 
-  # Clone this for the hr_map.csv needed to save csv file
-  #  todo - make this more seamless so that the whole repo isn't needed.
-  repo_ishaberry = git.Repo.clone_from("https://github.com/ishaberry/Covid19Canada.git", 
-        "/content/Covid19Canada", 
-        depth=1,
-        branch="master")
-
-  # Clone the repository which will recieve the output
-  repo_origin_path = "https://oauth2:"+ oauth +"@gitlab.com/stevenhorn/covid-prevalence.git"
-  log.info("cloning repository from %s" % repo_origin_path)
-
-  repo = git.Repo.clone_from(repo_origin_path, 
-      repo_path,
-      depth=1,
-      branch="master")
-
+  repo = git.Repo(repo_path) # repo = git.Repo('/content/covid-prevalence')
   # Configure git user
   repo.config_writer().set_value("user", "name", "Steven Horn").release()
   repo.config_writer().set_value("user", "email", "steven@horn.work").release()
   repo.config_writer().set_value("mergetool", "keepBackup", "false").release()
 
   # we will work on a different branch
-  worker_branch = 'latest-' + datetime.datetime.utcnow().strftime('%y%m%d')
-  repo.git.checkout('-b', worker_branch)
+  #worker_branch = 'latest-' + datetime.datetime.utcnow().strftime('%y%m%d')
+  #repo.git.checkout('-b', worker_branch)
 
   # work on the most recent version of the branch if it exists on origin.
-  try:
-    res = repo.remotes.origin.pull(worker_branch)
-  except git.GitCommandError as e:
-    log.error(str(e))
+  #try:
+  #  res = repo.remotes.origin.pull(worker_branch)
+  #except git.GitCommandError as e:
+  #  log.error(str(e))
 
   # It's possible that this is a new branch.  This ensures it on the remote.
-  try:
-    repo.remotes.origin.push(worker_branch)
-  except git.GitCommandError as e:
-    log.error(str(e))
+  #try:
+  #  repo.remotes.origin.push(worker_branch)
+  #except git.GitCommandError as e:
+  #  log.error(str(e))
 
   # run the processing loop - if the queue is empty, then this program will end
   timed_out = False
@@ -153,18 +141,14 @@ if __name__=='__main__':
 
       num_wait_loops = 0
       itemstr = item.decode("utf-8")
-
       log.debug("Recieved task " + itemstr)
-
       task = json.loads(itemstr)
-
+      model = task['model']
+      settings = task['settings']
       pop = task['pop']
       log.info("Working on " + pop['name'])
 
-      savefolder, folder = get_folders(pop)
-
-      model = task['model']
-      settings = task['settings']
+      savefolder, folder = get_folders(pop, rootpath='/data')
 
       # First we read the json into a dataframe
       nc_df = pd.read_json(task['new_cases'], orient='table')
@@ -282,15 +266,15 @@ if __name__=='__main__':
       if pop['run'] == True:
         log.info('Updating CSV files')
         try:
-          _, _ = covprev.data.savecsv(this_model, trace, pop)
+          _, _ = covprev.data.savecsv(this_model, trace, pop, rootpath='/data')
         except Exception as e:
           log.error(str(e))
 
         log.info('Generating plots')
         try:
-          plot_fit(this_model, trace, new_cases, pop, settings)
+          plot_fit(this_model, trace, new_cases, pop, settings, rootpath='/data')
           #plot_posteriors(this_model, trace, pop, settings)
-          plot_prevalence(this_model, trace, pop, settings)
+          plot_prevalence(this_model, trace, pop, settings, rootpath='/data')
           #plot_IFR(this_model, trace, pop, settings, cum_deaths)
           #dft, dfn = savecsv(this_model, trace, pop)
         except Exception as e:
@@ -316,65 +300,34 @@ if __name__=='__main__':
       message = "Updates for " + pop['name'] # message = "Updates for " + regionid
       try:
         log.info('Local commit prior to pulling')
-        repo.git.checkout('-b', worker_branch + '_' + regionid)
+        #repo.git.checkout('-b', worker_branch + '_' + regionid)
         # we need to commit our changes before pulling
         repo.git.add('--all')
         repo.git.commit('-m', message, author='Steven Horn')
-        # switch back to branch
-        repo.git.checkout(worker_branch)
       except git.GitCommandError as e:
         log.error(str(e))
       
-      numpushattempts = 0
-      success = False
-      while not success and numpushattempts < 6:
-        numpushattempts = numpushattempts + 1
-        try:
-          log.info('Trying to commit.  Attempt %d' % numpushattempts)
+      if always_push:
+        numpushattempts = 0
+        success = False
+        while not success and numpushattempts < 3:
+          numpushattempts = numpushattempts + 1
           try:
-            log.info('Pulling from git prior to pushing')
-            # the merge should be seamless
-            res = repo.remotes.origin.pull(worker_branch)
-          except git.GitCommandError as e:
-            log.error(str(e))
-            
-          try:
-            log.info('Merging...')
-            # we should now be on the newest branch - so we merge our result in
-            #repo.git.merge('-s','recursive','-X','theirs', worker_branch + '_' + regionid)
-            # there really shouldn't be conflicts.
-            repo.git.merge('-s','recursive', worker_branch + '_' + regionid)
+            log.info('Pushing branch %s to origin' % repo.active_branch.name)
+            repo.remotes.origin.push(repo.active_branch.name)
+            success = True
           except Exception as e:
-            log.error(str(e))
+            log.error("Error pushing. " + str(e))
+            # Wait before trying again to avoid hammering git
+            time.sleep(30)
 
-            # Try auto-resolve
-            try:
-              log.info('Attempting to auto-resolve conflict(s)')
-              repo.git.mergetool()
-              repo.git.commit('-am', "merged " + message)
-              log.info('Autoresolve succeeded.')
-            except Exception as e:
-              log.error(str(e))
-              repo.git.merge('--abort')
-              log.info('using recursive theirs as backup.')
-              repo.git.merge('-s','recursive','-X','theirs', worker_branch + '_' + regionid)
-
-          log.info('Pushing branch %s to origin' % worker_branch)
-          repo.remotes.origin.push(worker_branch)
-          success = True
-        except Exception as e:
-          log.error("Error pushing. " + str(e))
-          # Wait before trying again to avoid hammering git
-          time.sleep(30)
-
-          # this probably happened since the remote was updated before we pushed,
-          # we will try again.
-          # force reset the branch (removing the failed merge result)
-          repo.git.merge('--abort')
-          repo.git.checkout('-f', worker_branch)
-      
-      if not success:
-        log.error('Unable to commit %s' % pop['name'])
+            # this probably happened since the remote was updated before we pushed,
+            # we will try again.
+            # force reset the branch (removing the failed merge result)
+            #repo.git.merge('--abort')
+            #repo.git.checkout('-f', repo.active_branch.name)
+        if not success:
+          log.error('Unable to commit %s' % pop['name'])
 
       # Mark as completed and remove from work queue.
       if ispq:
@@ -391,6 +344,7 @@ if __name__=='__main__':
         # this will break the loop and exit the program
         timed_out = True
 
+      # this is to poke the queue for failed workers
       # q.check_expired_leases()
 
   log.info("Worker queue empty, exiting")

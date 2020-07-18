@@ -46,78 +46,96 @@ logging.basicConfig(level=logging.INFO,
     datefmt='%Y-%m-%d %H:%M:%S')
 log = logging.getLogger(__name__)
 
+can_data_path = os.getenv("CAN_DATA_PATH", default="/data/Covid19Canada")
+jhu_data_path = os.getenv("JHU_DATA_PATH", default="/data/COVID-19")
+cov_repo_path = os.getenv("COV_REPO_PATH", default="/data/covid-prevalence-estimate")
+result_repo_path = os.getenv("RESULT_REPO_PATH", default="/data/covid-prevalence")
+redis_host = os.getenv("REDIS_SERVICE_HOST", default="redis")
+oauth = os.getenv('GITLAB_OAUTH', default='53gZwasv6UmExxrohqPm')
+
 if __name__=='__main__':
-    log.info("Starting controller")
+    log.info("Started controller")
 
-    log.info("cloning ishaberry/Covid19Canada Data")
-    # ! git clone https://github.com/ishaberry/Covid19Canada.git --depth 1 --branch master --single-branch /content/Covid19Canada
-    repo_ishaberry = git.Repo.clone_from("https://github.com/ishaberry/Covid19Canada.git", 
-        "/content/Covid19Canada", 
-        depth=1,
-        branch="master")
+    log.info('pulling latest Canadian data...')
+    repo_ishaberry = git.Git(can_data_path)
+    repo_ishaberry.pull('origin','master')
+    log.info('success')
 
-    log.info("cloning CSSEGISandData/COVID-19 Data")
-    #! git clone https://github.com/CSSEGISandData/COVID-19.git --depth 1 --branch master --single-branch /content/COVID-19
-    repo_jhu = git.Repo.clone_from("https://github.com/CSSEGISandData/COVID-19.git", 
-        "/content/COVID-19", 
-        depth=1,
-        branch="master")
+    log.info('pulling latest USA data...')
+    repo_jhu = git.Git(jhu_data_path)
+    repo_jhu.pull('origin','master')
+    log.info('success')
 
-    oauth = os.getenv('gitlab_oauth', default='53gZwasv6UmExxrohqPm')
+    log.info('pulling latest configuration data...')
+    repo_covprev = git.Git(cov_repo_path)
+    repo_covprev.pull('origin','master')
+    log.info('success')
 
-    repopath = "https://oauth2:"+ oauth +"@gitlab.com/stevenhorn/covid-prevalence-estimate.git"
+    log.info('pulling latest output data...')
+    repo_out = git.Git(result_repo_path)
+    repo_out.fetch('--all')
+    repo_out.fetch('--prune') # remove branches that don't exist on the remotes
+    repo_out.pull('origin','master')
+    repo_out = git.Repo(result_repo_path)
+    # we should now be set up with our repo in the right state to start work
+    log.info('success')
 
-    log.info("cloning program from %s" % repopath)
-
-    repo = git.Repo.clone_from(repopath, 
-        "/content/covid-prevalence-estimate",
-        depth=1,
-        branch="master")
+    log.info('try to checkout worker branch')
+    worker_branch = 'latest-' + datetime.datetime.utcnow().strftime('%y%m%d')
+    repo_branches = repo_out.branches
+    repo_branch_names = [h.name for h in repo_branches]
+    if worker_branch in repo_branch_names:
+        log.info("branch exists - switching")
+        try:
+            repo_out.git.checkout(worker_branch)
+            log.info('success')
+        except Exception as e:
+            log.error(str(e))
+    else:
+        log.info("branch doesn't exist - creating")
+        try:
+            repo_out.git.checkout('-b', worker_branch)
+            log.info('success')
+        except Exception as e:
+            log.error(str(e))
+            # this is a fatal error
+            sleep(60*5) # a timeout to give time to see logs before k8s eats it
+            os._exit(1)
+    
+    # debug
+    #sleep(60*60*12)
+    #os._exit(0)
 
     # This is the worker queue.
     queuename = os.getenv('redis_worker_queue', default='covidprev')
     log.info("Connecting to redis queue (%s)" % queuename)
-    q = RedisWQ(name=queuename, host="redis")
+    q = RedisWQ(name=queuename, host=redis_host)
 
     # Load the config file from the repo
     log.info("Loading configuration")
-    with open('/content/covid-prevalence-estimate/config/config.json','r') as f:
+    with open('/data/covid-prevalence-estimate/config/config.json','r') as f:
         config = json.load(f)
 
     model = config['model']
     settings = config['settings']
 
-    try:
-        dataurl = "https://stevenhorn.gitlab.io/covid-prevalence/results/latest_results.csv"
-        df = pd.read_csv(dataurl, parse_dates=['analysisTime'])
-    except:
-        # results file not there - create dummy
-        df = None
-
     # create worker jobs for each population
     log.info("Processing populations")
-    for pop in config['populations']: # pop = config['populations'][1]
+    for pop in config['populations']: # pop = config['populations'][3000]
         if pop['run'] == True:
             # Check when it was last run
             folder = pop["source_country"] + pop["source_state"] + ("" if pop["source_region"] == None else pop["source_region"])
-            folder = folder.replace(' ','')  # folder = 'USColoradoElPaso'
+            folder = folder.replace(' ','')  # folder = 'USMichiganMidland'
             try:
-                savefolder = '/content/covid-prevalence/results/latest/' + folder
+                savefolder = '/data/covid-prevalence/results/latest/' + folder
                 rfilepath = savefolder + '/' + folder + '_latest.csv'
                 dfr = pd.read_csv(rfilepath, parse_dates=['analysisTime'])
-                lastrun = df[df['nameid'] == folder]['analysisTime']
+                lastrun = dfr[dfr['nameid'] == folder]['analysisTime']
                 dt = datetime.datetime.utcnow() - lastrun
                 dt_hours = dt.to_list()[0].total_seconds()/60/60
             except Exception as e:
-
-                # Try check if latest is in folder
-                try:
-                    lastrun = df[df['nameid'] == folder]['analysisTime']
-                    dt = datetime.datetime.utcnow() - lastrun
-                    dt_hours = dt.to_list()[0].total_seconds()/60/60
-                except Exception as e:
-                    log.error('error checking last run time, assume 200 hours. ' + str(e))
-                    dt_hours = 200
+                log.error('error checking last run time, assume 200 hours. ' + str(e))
+                dt_hours = 200
 
             # This is the frequency with which to run the model for this region
             max_frequency = config['settings']['frequency']
@@ -133,7 +151,7 @@ if __name__=='__main__':
 
             # Fetch Data for processing
             log.debug('Fetching region data.')
-            new_cases, cum_deaths, bd = covprev.data.get_data(pop)
+            new_cases, cum_deaths, bd = covprev.data.get_data(pop, rootpath = '/data')
             
             # fix up negative case values - reduces model quality
             new_cases[new_cases < 0] = 0

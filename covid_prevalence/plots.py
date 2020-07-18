@@ -29,12 +29,12 @@ import logging
 
 log = logging.getLogger(__name__)
 
-def plot_data(this_model, new_cases, pop, settings, closeplot=True):
+def plot_data(this_model, new_cases, pop, settings, closeplot=True, rootpath='/content'):
   log.info('Plotting Data')
   ShowPreliminary = settings['ShowPreliminary']
   popname = pop['name']
 
-  savefolder, folder = ut.get_folders(pop)
+  savefolder, folder = ut.get_folders(pop, rootpath=rootpath)
   
   x_data = pd.date_range(start=this_model.data_begin, 
                          end=this_model.data_begin + datetime.timedelta(days=new_cases.shape[0]-1) )
@@ -57,12 +57,12 @@ def plot_data(this_model, new_cases, pop, settings, closeplot=True):
   if closeplot:
     plt.close()
 
-def plot_fit(this_model, trace, new_cases, pop, settings, closeplot=True):
+def plot_fit(this_model, trace, new_cases, pop, settings, closeplot=True,rootpath='/content'):
   N = this_model.N_population
   log.info('Plotting Fit')
   ShowPreliminary = settings['ShowPreliminary']
   popname = pop['name']
-  savefolder, folder = ut.get_folders(pop)
+  savefolder, folder = ut.get_folders(pop, rootpath=rootpath)
     # inspect the chain realizations
   trace.varnames
   I_t = trace["new_detections"][:, None]
@@ -113,12 +113,12 @@ def plot_fit(this_model, trace, new_cases, pop, settings, closeplot=True):
 
   log.info('Fit plot saved to %s' % savepath)
 
-def plot_posteriors(this_model, trace, pop, settings):
+def plot_posteriors(this_model, trace, pop, settings,rootpath='/content'):
   N = this_model.N_population
 
   # spreading rate fit
   ShowPreliminary = settings['ShowPreliminary']
-  savefolder, folder = ut.get_folders(pop)
+  savefolder, folder = ut.get_folders(pop, rootpath=rootpath)
   pa = trace["pa"][:, None]
   pu = trace["pu"][:, None]
   I_t = trace["I_t"][:, None]
@@ -190,11 +190,11 @@ def plot_posteriors(this_model, trace, pop, settings):
   plt.close()
 
 # This code needs major cleanup
-def plot_prevalence(this_model, trace, pop, settings, closeplot=True): #closeplot=False
+def plot_prevalence(this_model, trace, pop, settings, closeplot=True, rootpath='/content'): #closeplot=False
   # this is the infected asymptomatic AND symptimatic
   ShowPreliminary = settings['ShowPreliminary']
   popname = pop['name']
-  savefolder, folder = ut.get_folders(pop)
+  savefolder, folder = ut.get_folders(pop, rootpath=rootpath)
   trimend = -1#-25
   trimstart=0
 
@@ -474,11 +474,11 @@ def plot_prevalence(this_model, trace, pop, settings, closeplot=True): #closeplo
   if closeplot:
     plt.close()
 
-def plot_IFR(this_model, trace, pop, settings, cum_deaths):
+def plot_IFR(this_model, trace, pop, settings, cum_deaths, rootpath='/content'):
   # this is the infected asymptomatic AND symptimatic
   ShowPreliminary = settings['ShowPreliminary']
   popname = pop['name']
-  savefolder, folder = ut.get_folders(pop)
+  savefolder, folder = ut.get_folders(pop, rootpath=rootpath)
   # IFR estimate
   death_t = np.array(cum_deaths)
   #print(death_t)

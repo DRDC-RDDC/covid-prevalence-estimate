@@ -21,10 +21,10 @@
 import numpy as np
 from pathlib import Path
 
-def get_folders(pop):
+def get_folders(pop, rootpath='/content'):
   folder = pop["source_country"] + pop["source_state"] + ("" if pop["source_region"] == None else pop["source_region"])
   folder = folder.replace(' ','')
-  savefolder = '/content/covid-prevalence/results/latest/' + folder
+  savefolder = rootpath + '/covid-prevalence/results/latest/' + folder
   Path(savefolder).mkdir(parents=True, exist_ok=True)
   return savefolder,folder
 

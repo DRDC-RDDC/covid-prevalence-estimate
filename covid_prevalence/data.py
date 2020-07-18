@@ -26,19 +26,19 @@ import os
 import pandas as pd
 from . import utility as ut
 
-def savecsv(this_model, trace, pop):
+def savecsv(this_model, trace, pop, rootpath='/content'):
   analysis_date = datetime.datetime.utcnow()
-  savefolder, folder = ut.get_folders(pop)
+  savefolder, folder = ut.get_folders(pop, rootpath=rootpath)
   hr_uid = 0
   FIPS = 0
 
   if pop['source'] == 'codwg':
-    infodf = pd.read_csv('/content/Covid19Canada/other/hr_map.csv')
+    infodf = pd.read_csv(rootpath + '/Covid19Canada/other/hr_map.csv')
     popinfo = infodf.loc[lambda df: (df['Province'] == pop["source_state"]) & (df['health_region'] == pop["source_region"])]
     hr_uid = popinfo["HR_UID"].to_numpy()[0]
   
   if pop['source'] == 'jhu-us':
-    infodf = pd.read_csv('/content/covid-prevalence/data/UID_ISO_FIPS_LookUp_Table.csv')
+    infodf = pd.read_csv(rootpath + '/covid-prevalence/data/UID_ISO_FIPS_LookUp_Table.csv')
     if pop['source_region'] is None:
       popinfo = infodf.loc[lambda df: (df['Province_State'] == pop["source_state"]) & (df['iso2'] == pop["source_country"])]
     else:
@@ -184,7 +184,7 @@ def savecsv(this_model, trace, pop):
   return dfu, dfnow
   
 
-def get_data(pop):
+def get_data(pop, rootpath='/content'):
   bd = isoparse(pop['date_start'])
   if pop['source'] == 'jhu':
     jhu = cov19.data_retrieval.JHU(auto_download=True)
@@ -194,7 +194,7 @@ def get_data(pop):
     cum_deaths = jhu.get_total(value='deaths', country=country, state=state, data_begin=bd)
 
   elif pop['source'] == 'jhu-us':
-    dataurl = r"/content/COVID-19/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_US.csv"
+    dataurl = rootpath + r"/COVID-19/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_US.csv"
     df = pd.read_csv(dataurl)
     df = df.drop(columns=["Lat", "Long_","UID","iso2","iso3","code3","FIPS","Combined_Key","Population"]).rename(
                         columns={"Province_State": "state", "Country_Region": "country", "Admin2": "county"}
@@ -226,7 +226,7 @@ def get_data(pop):
     #print("Last data: " + str(end_date))
     cum_deaths = dfdcumdata["deaths"]
     
-    dataurl = r"/content/COVID-19/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_US.csv"
+    dataurl = rootpath + r"/COVID-19/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_US.csv"
 
     # cases
     df = pd.read_csv(dataurl)
@@ -262,7 +262,7 @@ def get_data(pop):
     
   elif pop['source'] == 'codwg':
     # Check if we've downloaded the latest
-    dataurl = "/content/Covid19Canada/timeseries_hr/cases_timeseries_hr.csv"
+    dataurl = rootpath + r"/Covid19Canada/timeseries_hr/cases_timeseries_hr.csv"
     df = pd.read_csv(dataurl)
     df = df.drop(columns=["cumulative_cases"]).rename(
                     columns={"cases": "confirmed", "date_report":"date"}
@@ -277,7 +277,7 @@ def get_data(pop):
     new_cases = dfdatafilter["confirmed"]
 
     try:
-      dataurl = "/content/Covid19Canada/timeseries_hr/mortality_timeseries_hr.csv"
+      dataurl = rootpath + r"/Covid19Canada/timeseries_hr/mortality_timeseries_hr.csv"
       df = pd.read_csv(dataurl)
       df = df.drop(columns=["deaths"]).rename(
                       columns={"cumulative_deaths": "deaths", "date_death_report":"date"}
