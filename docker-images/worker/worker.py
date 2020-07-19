@@ -95,34 +95,13 @@ if __name__=='__main__':
   log.info("Initial queue state: empty=" + str(q.empty()))
 
   repo = git.Repo(repo_path) # repo = git.Repo('/content/covid-prevalence')
-  # Configure git user
-  repo.config_writer().set_value("user", "name", "Steven Horn").release()
-  repo.config_writer().set_value("user", "email", "steven@horn.work").release()
-  repo.config_writer().set_value("mergetool", "keepBackup", "false").release()
-
-  # we will work on a different branch
-  #worker_branch = 'latest-' + datetime.datetime.utcnow().strftime('%y%m%d')
-  #repo.git.checkout('-b', worker_branch)
-
-  # work on the most recent version of the branch if it exists on origin.
-  #try:
-  #  res = repo.remotes.origin.pull(worker_branch)
-  #except git.GitCommandError as e:
-  #  log.error(str(e))
-
-  # It's possible that this is a new branch.  This ensures it on the remote.
-  #try:
-  #  repo.remotes.origin.push(worker_branch)
-  #except git.GitCommandError as e:
-  #  log.error(str(e))
 
   # run the processing loop - if the queue is empty, then this program will end
+  # This sets up a loop to get data from the queue.  Continues if 
+  # 30 seconds has elapsed - logging a waiting message.
   timed_out = False
   num_wait_loops = 0
   while not timed_out and not q.empty():
-    # This sets up a loop to get data from the queue.  Continues if 
-    # 30 seconds has elapsed - logging a waiting message.
-
     # if we have something in the prioiry queue, then that gets processed next
     ispq = False
     if not pq.empty():
@@ -161,16 +140,6 @@ if __name__=='__main__':
       cum_deaths = cd_df[cd_df.columns[0]]
 
       bd = isoparse(pop['date_start']) # This is the first day of data
-      pa_a = model['pa_a']
-      pa_b = model['pa_b']
-      pu_a = model['pu_a']
-      pu_b = model['pu_b']
-      pr_gamma_mu_days = model['gamma_mu_days']
-      pr_gamma_mu_sigma = model['gamma_mu_sigma']
-      pr_asym_recover_mu_days = model['asym_recover_mu_days']
-      pr_asym_recover_mu_sigma = model['asym_recover_mu_sigma']
-      pr_sym_recover_mu_days = model['sym_recover_mu_days']
-      pr_sym_recover_mu_sigma = model['sym_recover_mu_sigma']
 
       # Model parameters
       params_model = dict(
@@ -246,57 +215,61 @@ if __name__=='__main__':
           log.info('numtune override in population')
           numsims = pop['numtune']
 
-      cores = 4
-      if pop['run'] == False:
-        plot_data(this_model, new_cases, pop, settings)
-      else:
-        log.info('Starting sampling')
-        trace = pm.sample(
-          model=this_model, 
-          chains=settings['chains'],
-          tune=numtune, 
-          draws=numsims, 
-          n_init=50000,     # we really should have converged by 50k
-          init="advi+adapt_diag", cores=cores)
+        cores = 4
+        if pop['run'] == False:
+          plot_data(this_model, new_cases, pop, settings)
+        else:
+          log.info('Starting sampling')
+          trace = pm.sample(
+            model=this_model, 
+            chains=settings['chains'],
+            tune=numtune, 
+            draws=numsims, 
+            n_init=50000,     # we really should have converged by 50k
+            init="advi+adapt_diag", cores=cores)
 
-      # TODO: check if advi did not converge (bad model fit)
-      stop_time = datetime.datetime.utcnow()
-      elapsed_time = stop_time-start_time
-      pop['compute_time'] = str(elapsed_time)
-      if pop['run'] == True:
-        log.info('Updating CSV files')
-        try:
-          _, _ = covprev.data.savecsv(this_model, trace, pop, rootpath='/data')
-        except Exception as e:
-          log.error(str(e))
+        # TODO: check if advi did not converge (bad model fit)
+        stop_time = datetime.datetime.utcnow()
+        elapsed_time = stop_time-start_time
+        pop['compute_time'] = str(elapsed_time)
+        if pop['run'] == True:
+          log.info('Updating CSV files')
+          try:
+            _, _ = covprev.data.savecsv(this_model, trace, pop, rootpath='/data')
+          except Exception as e:
+            log.error(str(e))
 
-        log.info('Generating plots')
-        try:
-          plot_fit(this_model, trace, new_cases, pop, settings, rootpath='/data')
-          #plot_posteriors(this_model, trace, pop, settings)
-          plot_prevalence(this_model, trace, pop, settings, rootpath='/data')
-          #plot_IFR(this_model, trace, pop, settings, cum_deaths)
-          #dft, dfn = savecsv(this_model, trace, pop)
-        except Exception as e:
-          log.error(str(e))
+          log.info('Generating plots')
+          try:
+            plot_fit(this_model, trace, new_cases, pop, settings, rootpath='/data')
+            #plot_posteriors(this_model, trace, pop, settings)
+            plot_prevalence(this_model, trace, pop, settings, rootpath='/data')
+            #plot_IFR(this_model, trace, pop, settings, cum_deaths)
+            #dft, dfn = savecsv(this_model, trace, pop)
+          except Exception as e:
+            log.error(str(e))
 
-        log.info('Saving statistics')
-        try:
-          divs = trace.get_sampler_stats('diverging')
-          llostat = pms.loo(trace,pointwise=True, scale="log")
-          llostat_str = str(llostat)
-          savepath = savefolder + '/'+folder+'_stats.txt'
-          with open(savepath, 'w') as f:
-            f.write('%d Divergences \n' % np.sum(divs))
-            f.write(llostat_str)
+          log.info('Saving statistics')
+          try:
+            divs = trace.get_sampler_stats('diverging')
+            llostat = pms.loo(trace,pointwise=True, scale="log")
+            llostat_str = str(llostat)
 
-        except Exception as e:
-          log.error(str(e))
+            summary = pm.summary(trace, var_names=["pa", "pu","mu","mus", "Is_begin","Ia_begin","E_begin"])
+            summary_str = str(summary)
+            savepath = savefolder + '/'+folder+'_stats.txt'
+            with open(savepath, 'w') as f:
+              f.write('%d Divergences \n' % np.sum(divs))
+              f.write(llostat_str)
+              f.write('\n')
+              f.write(summary_str)
+
+          except Exception as e:
+            log.error(str(e))
 
       # We try to push the results to git
       regionid = pop["source_country"] + pop["source_state"] + ("" if pop["source_region"] == None else pop["source_region"])
       regionid = regionid.replace(' ','')  # regionid = 'USColoradoElPaso'
-
       message = "Updates for " + pop['name'] # message = "Updates for " + regionid
       try:
         log.info('Local commit prior to pulling')
@@ -345,6 +318,7 @@ if __name__=='__main__':
         timed_out = True
 
       # this is to poke the queue for failed workers
+      # currently disabled - not tested for redis db concurrency
       # q.check_expired_leases()
 
   log.info("Worker queue empty, exiting")

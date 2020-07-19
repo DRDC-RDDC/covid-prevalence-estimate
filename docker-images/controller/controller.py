@@ -71,12 +71,15 @@ if __name__=='__main__':
     repo_covprev.pull('origin','master')
     log.info('success')
 
-    log.info('pulling latest output data...')
+    log.info('pulling latest covid-estimate repo...')
     repo_out = git.Git(result_repo_path)
     repo_out.fetch('--all')
     repo_out.fetch('--prune') # remove branches that don't exist on the remotes
+    repo_out.checkout('master')
     repo_out.pull('origin','master')
     repo_out = git.Repo(result_repo_path)
+    repo_out.config_writer().set_value("user", "name", "Steven Horn").release()
+    repo_out.config_writer().set_value("user", "email", "steven@horn.work").release()
     # we should now be set up with our repo in the right state to start work
     log.info('success')
 

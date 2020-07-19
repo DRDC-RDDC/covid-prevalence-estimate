@@ -23,7 +23,7 @@
   },
   "settings": {
     "numsims": 20,
-    "chains": 8,
+    "chains": 4,
     "numtune": 100,
     "frequency": 150,
     "ShowPreliminary": true
