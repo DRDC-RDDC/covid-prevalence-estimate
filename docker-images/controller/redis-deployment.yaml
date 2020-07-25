@@ -15,6 +15,15 @@ spec:
       labels:
         app: redis
     spec:
+      affinity:
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                - key: failure-domain.beta.kubernetes.io/zone
+                  operator: In
+                  values:
+                  - ca-central-1a
       containers:
         - name: master
           image: redis
