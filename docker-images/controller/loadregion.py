@@ -29,8 +29,8 @@ if __name__=='__main__':
     log.info("Starting controller")
 
     clone = "-c" in opts
-
     priority1 = "-P1" in opts
+    timefilter = "-tf" in opts
     
     if clone:
         log.info("cloning ishaberry/Covid19Canada Data")
@@ -75,7 +75,7 @@ if __name__=='__main__':
 
     # Load the config file from the repo
     log.info("Loading configuration")
-    with open('/content/covid-prevalence-estimate/config/config.json','r') as f:
+    with open('/data/covid-prevalence-estimate/config/config.json','r') as f:
         config = json.load(f)
 
     model = config['model']
@@ -101,10 +101,43 @@ if __name__=='__main__':
         popkey = (ss, sr, sc)
         if popkey != reqkey:
             continue
+        
+        if timefilter:
+            # Check when it was last run
+            folder = pop["source_country"] + pop["source_state"] + ("" if pop["source_region"] == None else pop["source_region"])
+            folder = folder.replace(' ','')  # folder = 'USMichiganMidland'
+            try:
+                savefolder = '/data/covid-prevalence/results/latest/' + folder
+                rfilepath = savefolder + '/' + folder + '_latest.csv'
+                dfr = pd.read_csv(rfilepath, parse_dates=['analysisTime'])
+                lastrun = dfr[dfr['nameid'] == folder]['analysisTime']
+                dt = datetime.datetime.utcnow() - lastrun
+                dt_hours = dt.to_list()[0].total_seconds()/60/60
+            except Exception as e:
+                log.error('error checking last run time, assume 200 hours. ' + str(e))
+                dt_hours = 200
+
+            # This is the frequency with which to run the model for this region
+            max_frequency = config['settings']['frequency']
+            
+            if 'frequency' in pop:
+                # This region has an override on the frequency
+                log.info("Frequency override: %d hours" % pop['frequency'] )
+                max_frequency = pop['frequency']
+
+            if dt_hours < max_frequency:
+                log.info("Job Skipped: %s, last run %d hours ago" % (pop['name'], dt_hours ))
+                continue
 
         # Fetch Data for processing
         log.debug('Fetching region data.')
-        new_cases, cum_deaths, bd = covprev.data.get_data(pop)
+        try:
+            new_cases, cum_deaths, bd = covprev.data.get_data(pop, rootpath='/data')
+        except Exception as e:
+                log.error('Error fetching region data.')
+                log.error(str(e))
+                continue
+
         # fix up negative case values - reduces model quality
         new_cases[new_cases < 0] = 0
         log.info("Job Queuing: %s" % pop['name'])

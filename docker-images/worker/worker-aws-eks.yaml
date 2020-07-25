@@ -18,10 +18,10 @@ spec:
         resources:
           limits:
             memory: "2048Mi"
-            cpu: 8
+            cpu: 32
           requests:
             memory: "2048Mi"
-            cpu: 8
+            cpu: 15.9
       restartPolicy: Never
       volumes:
         - name: persistent-storage

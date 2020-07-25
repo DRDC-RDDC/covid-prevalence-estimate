@@ -56,6 +56,10 @@ oauth = os.getenv('GITLAB_OAUTH', default='53gZwasv6UmExxrohqPm')
 if __name__=='__main__':
     log.info("Started controller")
 
+    # debug
+    sleep(60*60*24*7)
+    os._exit(0)
+
     log.info('pulling latest Canadian data...')
     repo_ishaberry = git.Git(can_data_path)
     repo_ishaberry.pull('origin','master')
@@ -71,6 +75,11 @@ if __name__=='__main__':
     repo_covprev.pull('origin','master')
     log.info('success')
 
+    # debug
+    sleep(60*60*24*7)
+    os._exit(0)
+
+    '''
     log.info('pulling latest covid-estimate repo...')
     repo_out = git.Git(result_repo_path)
     repo_out.fetch('--all')
@@ -104,10 +113,7 @@ if __name__=='__main__':
             # this is a fatal error
             sleep(60*5) # a timeout to give time to see logs before k8s eats it
             os._exit(1)
-    
-    # debug
-    #sleep(60*60*12)
-    #os._exit(0)
+    '''
 
     # This is the worker queue.
     queuename = os.getenv('redis_worker_queue', default='covidprev')
@@ -154,7 +160,12 @@ if __name__=='__main__':
 
             # Fetch Data for processing
             log.debug('Fetching region data.')
-            new_cases, cum_deaths, bd = covprev.data.get_data(pop, rootpath = '/data')
+            try:
+                new_cases, cum_deaths, bd = covprev.data.get_data(pop, rootpath = '/data')
+            except Exception as e:
+                log.error('Error fetching region data.')
+                log.error(str(e))
+                continue
             
             # fix up negative case values - reduces model quality
             new_cases[new_cases < 0] = 0
