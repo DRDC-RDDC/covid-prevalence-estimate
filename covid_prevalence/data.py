@@ -14,8 +14,6 @@
 
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-    The author can be contacted at steven.horn@forces.gc.ca
 '''
 
 import covid19_inference as cov19
@@ -134,6 +132,9 @@ def savecsv(this_model, trace, pop, rootpath='/content'):
     analysisTime = analysis_date, 
     dates = x[todayix],
     compute_time = pop['compute_time'],
+    divergences = pop['divs'],
+    draws = pop['draws'],
+    tunes = pop['tunes'],
     pointprevalence_025 = 100*Prev_t_025[todayix]/N if Prev_t_025[todayix] >= 0 else 0.0,
     pointprevalence_50 = 100*Prev_t_50[todayix]/N if Prev_t_50[todayix] >= 0 else 0.0,
     pointprevalence_975 = 100*Prev_t_975[todayix]/N if Prev_t_975[todayix] >= 0 else 0.0,

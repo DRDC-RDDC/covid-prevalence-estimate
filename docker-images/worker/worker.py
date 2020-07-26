@@ -228,30 +228,28 @@ if __name__=='__main__':
             n_init=50000,     # we really should have converged by 50k
             init="advi+adapt_diag", cores=cores)
 
-        # TODO: check if advi did not converge (bad model fit)
+        # TODO: check if advi did not converge (model mismatch)
+
+        # Here, we record how long it took to run the model
         stop_time = datetime.datetime.utcnow()
         elapsed_time = stop_time-start_time
         pop['compute_time'] = str(elapsed_time)
-        if pop['run'] == True:
-          log.info('Updating CSV files')
-          try:
-            _, _ = covprev.data.savecsv(this_model, trace, pop, rootpath='/data')
-          except Exception as e:
-            log.error(str(e))
+        pop['divs'] = -1 # This will record the number of divergences (-1 default)
+        pop['draws'] = numsims # This will record the number of runs (-1 default)
+        pop['tunes'] = numtune # This will record the number of tuning samples
 
+        if pop['run'] == True:
           log.info('Generating plots')
           try:
             plot_fit(this_model, trace, new_cases, pop, settings, rootpath='/data')
-            #plot_posteriors(this_model, trace, pop, settings)
             plot_prevalence(this_model, trace, pop, settings, rootpath='/data')
-            #plot_IFR(this_model, trace, pop, settings, cum_deaths)
-            #dft, dfn = savecsv(this_model, trace, pop)
           except Exception as e:
             log.error(str(e))
 
           log.info('Saving statistics')
           try:
             divs = trace.get_sampler_stats('diverging')
+            pop['divs'] = np.sum(divs)
             llostat = pms.loo(trace,pointwise=True, scale="log")
             llostat_str = str(llostat)
 
@@ -263,7 +261,12 @@ if __name__=='__main__':
               f.write(llostat_str)
               f.write('\n')
               f.write(summary_str)
+          except Exception as e:
+            log.error(str(e))
 
+          log.info('Updating CSV files')
+          try:
+            _, _ = covprev.data.savecsv(this_model, trace, pop, rootpath='/data')
           except Exception as e:
             log.error(str(e))
 

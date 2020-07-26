@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: covprev-work
+  generateName: covprev-work-
 spec:
   parallelism: 12
   template:
