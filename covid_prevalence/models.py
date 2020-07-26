@@ -23,6 +23,8 @@ import datetime
 import theano.tensor as tt
 import theano
 from dateutil.parser import isoparse
+from covid19_inference.model import Cov19Model
+import covid19_inference as cov19
 
 log = logging.getLogger(__name__)
 
@@ -67,8 +69,7 @@ def SEIRa(
     pr_sigma_median_symptomatic=1,
     sigma_isolate=0.3,
     model=None,
-    return_all=False,
-):
+    return_all=False):
     # Total number of people in population
     N = model.N_population
 
@@ -176,3 +177,80 @@ def SEIRa(
         return new_detections, E_t, Ia_t, Is_t, S_t
     else:
         return new_detections
+
+class PrevModel(Cov19Model):
+    '''
+    '''
+    def __init__(
+            self,
+            new_cases_obs,
+            data_begin,
+            fcast_len,
+            diff_data_sim,
+            N_population,
+            pop = None,
+            settings = None,
+            name="",
+            model=None):
+
+        # Initialize the base model (from covid_inference)
+        super().__init__(
+            new_cases_obs=new_cases_obs, 
+            data_begin=data_begin, 
+            fcast_len=fcast_len,
+            diff_data_sim=diff_data_sim,
+            N_population=N_population,
+            name=name, 
+            model=model)
+
+        # apply change points, lambda is in log scale
+        lambda_t_log = cov19.model.lambda_t_with_sigmoids(
+            pr_median_lambda_0 = pop['median_lambda_0'],
+            pr_sigma_lambda_0 = pop['sigma_lambda_0'],  # The initial spreading rate
+            change_points_list = dynamicChangePoints(pop),  # these change points are periodic over time and inferred
+        )
+
+        if model['pa'] == 'Beta':
+          pa = pm.Beta(name="pa", alpha=model['pa_a'], beta=model['pa_b'])
+        elif model['pa'] == 'BoundedNormal':
+          BoundedNormal = pm.Bound(pm.Normal, lower=model['pa_lower'], upper=model['pa_upper'])
+          pa = BoundedNormal(name="pa", mu=model['pa_mu'], sigma=model['pa_sigma'])
+        else:
+          pa = pm.Uniform(name="pa", lower=0.15, upper=0.5)
+
+        # Probability of undetected case
+        if model['pu'] == 'BoundedNormal':
+          BoundedNormal_pu = pm.Bound(pm.Normal, lower=model['pu_a'], upper=model['pu_b'])
+          pu = BoundedNormal_pu(name="pu", mu=model['pu_b']-model['pu_a'], sigma=0.2)
+        else:
+          pu = pm.Uniform(name="pu", upper=model['pu_b'], lower=model['pu_a'])
+
+        mu = pm.Lognormal(name="mu", mu=np.log(1 / model['asym_recover_mu_days']), sigma=model['asym_recover_mu_sigma'])    # Asymptomatic infectious period until recovered
+        mus = pm.Lognormal(name="mus", mu=np.log(1 / model['sym_recover_mu_days']), sigma=model['sym_recover_mu_sigma'])   # Pre-Symptomatic infectious period until showing symptoms -> isolated
+        gamma = pm.Lognormal(name="gamma", mu=np.log(1 / model['gamma_mu_days']), sigma=model['gamma_mu_sigma'])
+
+        new_Is_t = SEIRa(lambda_t_log, gamma, mu, mus, pa, pu,
+                        asym_ratio = model['asym_ratio'],  # 0.5 asymptomatic people are less infectious? - source CDC
+                        pr_Ia_begin=pop['pr_Ia_begin'],
+                        pr_Is_begin=pop['pr_Is_begin'],
+                        model=self)
+        
+        new_cases_inferred_raw = cov19.model.delay_cases(
+            cases=new_Is_t,
+            pr_mean_of_median=pop['pr_delay_mean_of_median'],
+        )
+
+        # apply a weekly modulation, fewer reports during weekends
+        if 'noweekmod' in pop and pop['noweekmod']:
+          log.info('Not using weekly modulation')
+          pm.Deterministic("new_cases", new_cases_inferred_raw)
+          new_cases_inferred = new_cases_inferred_raw
+        else:
+          new_cases_inferred = cov19.model.week_modulation(
+              new_cases_inferred_raw,
+              pr_mean_weekend_factor=pop['pr_mean_weekend_factor'],
+              pr_sigma_weekend_factor=pop['pr_sigma_weekend_factor'],
+              name_cases="new_cases")
+
+        # set the likeliehood
+        cov19.model.student_t_likelihood(new_cases_inferred)
