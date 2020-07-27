@@ -210,27 +210,28 @@ class PrevModel(Cov19Model):
             change_points_list = dynamicChangePoints(pop),  # these change points are periodic over time and inferred
         )
 
-        if model['pa'] == 'Beta':
-          pa = pm.Beta(name="pa", alpha=model['pa_a'], beta=model['pa_b'])
+        # Probability of asymptomatic case
+        if settings['model']['pa'] == 'Beta':
+          pa = pm.Beta(name="pa", alpha=settings['model']['pa_a'], beta=settings['model']['pa_b'])
         elif model['pa'] == 'BoundedNormal':
-          BoundedNormal = pm.Bound(pm.Normal, lower=model['pa_lower'], upper=model['pa_upper'])
-          pa = BoundedNormal(name="pa", mu=model['pa_mu'], sigma=model['pa_sigma'])
+          BoundedNormal = pm.Bound(pm.Normal, lower=settings['model']['pa_lower'], upper=settings['model']['pa_upper'])
+          pa = BoundedNormal(name="pa", mu=settings['model']['pa_mu'], sigma=settings['model']['pa_sigma'])
         else:
           pa = pm.Uniform(name="pa", lower=0.15, upper=0.5)
 
         # Probability of undetected case
-        if model['pu'] == 'BoundedNormal':
-          BoundedNormal_pu = pm.Bound(pm.Normal, lower=model['pu_a'], upper=model['pu_b'])
-          pu = BoundedNormal_pu(name="pu", mu=model['pu_b']-model['pu_a'], sigma=0.2)
+        if settings['model']['pu'] == 'BoundedNormal':
+          BoundedNormal_pu = pm.Bound(pm.Normal, lower=settings['model']['pu_a'], upper=settings['model']['pu_b'])
+          pu = BoundedNormal_pu(name="pu", mu=settings['model']['pu_b']-settings['model']['pu_a'], sigma=0.2)
         else:
-          pu = pm.Uniform(name="pu", upper=model['pu_b'], lower=model['pu_a'])
+          pu = pm.Uniform(name="pu", upper=settings['model']['pu_b'], lower=settings['model']['pu_a'])
 
-        mu = pm.Lognormal(name="mu", mu=np.log(1 / model['asym_recover_mu_days']), sigma=model['asym_recover_mu_sigma'])    # Asymptomatic infectious period until recovered
-        mus = pm.Lognormal(name="mus", mu=np.log(1 / model['sym_recover_mu_days']), sigma=model['sym_recover_mu_sigma'])   # Pre-Symptomatic infectious period until showing symptoms -> isolated
-        gamma = pm.Lognormal(name="gamma", mu=np.log(1 / model['gamma_mu_days']), sigma=model['gamma_mu_sigma'])
+        mu = pm.Lognormal(name="mu", mu=np.log(1 / settings['model']['asym_recover_mu_days']), sigma=settings['model']['asym_recover_mu_sigma'])    # Asymptomatic infectious period until recovered
+        mus = pm.Lognormal(name="mus", mu=np.log(1 / settings['model']['sym_recover_mu_days']), sigma=settings['model']['sym_recover_mu_sigma'])   # Pre-Symptomatic infectious period until showing symptoms -> isolated
+        gamma = pm.Lognormal(name="gamma", mu=np.log(1 / settings['model']['gamma_mu_days']), sigma=settings['model']['gamma_mu_sigma'])
 
         new_Is_t = SEIRa(lambda_t_log, gamma, mu, mus, pa, pu,
-                        asym_ratio = model['asym_ratio'],  # 0.5 asymptomatic people are less infectious? - source CDC
+                        asym_ratio = settings['model']['asym_ratio'],  # 0.5 asymptomatic people are less infectious? - source CDC
                         pr_Ia_begin=pop['pr_Ia_begin'],
                         pr_Is_begin=pop['pr_Is_begin'],
                         model=self)
