@@ -46,10 +46,11 @@ logging.basicConfig(level=logging.INFO,
     datefmt='%Y-%m-%d %H:%M:%S')
 log = logging.getLogger(__name__)
 
-can_data_path = os.getenv("CAN_DATA_PATH", default="/data/Covid19Canada")
-jhu_data_path = os.getenv("JHU_DATA_PATH", default="/data/COVID-19")
-cov_repo_path = os.getenv("COV_REPO_PATH", default="/data/covid-prevalence-estimate")
-result_repo_path = os.getenv("RESULT_REPO_PATH", default="/data/covid-prevalence")
+rootpath= "/data/covid-prev"
+can_data_path = os.getenv("CAN_DATA_PATH", default="/data/covid-prev/Covid19Canada")
+jhu_data_path = os.getenv("JHU_DATA_PATH", default="/data/covid-prev/COVID-19")
+cov_repo_path = os.getenv("COV_REPO_PATH", default="/data/covid-prev/covid-prevalence-estimate")
+result_repo_path = os.getenv("RESULT_REPO_PATH", default="/data/covid-prev/covid-prevalence")
 redis_host = os.getenv("REDIS_SERVICE_HOST", default="redis")
 oauth = os.getenv('GITLAB_OAUTH', default='53gZwasv6UmExxrohqPm')
 
@@ -122,10 +123,10 @@ if __name__=='__main__':
 
     # Load the config file from the repo
     log.info("Loading configuration")
-    with open('/data/covid-prevalence-estimate/config/config.json','r') as f:
+    with open(rootpath+'/covid-prevalence-estimate/config/config.json','r') as f:
         config = json.load(f)
 
-    model = config['model']
+    model = config['settings']['model']
     settings = config['settings']
 
     # create worker jobs for each population
@@ -136,7 +137,7 @@ if __name__=='__main__':
             folder = pop["source_country"] + pop["source_state"] + ("" if pop["source_region"] == None else pop["source_region"])
             folder = folder.replace(' ','')  # folder = 'USMichiganMidland'
             try:
-                savefolder = '/data/covid-prevalence/results/latest/' + folder
+                savefolder = rootpath + '/covid-prevalence/results/latest/' + folder
                 rfilepath = savefolder + '/' + folder + '_latest.csv'
                 dfr = pd.read_csv(rfilepath, parse_dates=['analysisTime'])
                 lastrun = dfr[dfr['nameid'] == folder]['analysisTime']
@@ -161,7 +162,7 @@ if __name__=='__main__':
             # Fetch Data for processing
             log.debug('Fetching region data.')
             try:
-                new_cases, cum_deaths, bd = covprev.data.get_data(pop, rootpath = '/data')
+                new_cases, cum_deaths, bd = covprev.data.get_data(pop, rootpath = rootpath)
             except Exception as e:
                 log.error('Error fetching region data.')
                 log.error(str(e))

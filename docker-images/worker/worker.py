@@ -43,8 +43,9 @@ import matplotlib.pyplot as plt
 import theano
 import theano.tensor as tt
 import pandas as pd
-import covid19_inference as cov19
-from covid19_inference.model import *
+from covid_prevalence.models import PrevModel
+#import covid19_inference as cov19
+#from covid19_inference.model import *
 from datetime import timezone
 from dateutil.parser import parse, isoparse
 from pathlib import Path
@@ -80,7 +81,9 @@ host = os.getenv("REDIS_SERVICE_HOST", default="redis")
 queuename = os.getenv('redis_worker_queue', default='covidprev')
 oauth = os.getenv('gitlab_oauth', default='53gZwasv6UmExxrohqPm')
 timelimit = 60*60*1 # these hours should be enough per region - make env?
-repo_path = "/data/covid-prevalence"
+
+rootpath = "/data/covid-prev"
+repo_path = rootpath + "/covid-prevalence"
 
 # push the results at end.  If false, they mush be manually pushed
 always_push = False
@@ -127,7 +130,7 @@ if __name__=='__main__':
       pop = task['pop']
       log.info("Working on " + pop['name'])
 
-      savefolder, folder = get_folders(pop, rootpath='/data')
+      savefolder, folder = get_folders(pop, rootpath=rootpath)
 
       # First we read the json into a dataframe
       nc_df = pd.read_json(task['new_cases'], orient='table')
@@ -148,61 +151,11 @@ if __name__=='__main__':
         fcast_len=pop['fcast_len'],             # forecast model
         diff_data_sim=pop['diff_data_sim'],     # number of days for burn-in
         N_population=pop['N'],
+        settings=settings,
+        pop = pop,
       )
 
-      with cov19.model.Cov19Model(**params_model) as this_model:
-        # apply change points, lambda is in log scale
-        lambda_t_log = cov19.model.lambda_t_with_sigmoids(
-            pr_median_lambda_0 = pop['median_lambda_0'],
-            pr_sigma_lambda_0 = pop['sigma_lambda_0'],  # The initial spreading rate
-            change_points_list = dynamicChangePoints(pop),  # these change points are periodic over time and inferred
-        )
-
-        if model['pa'] == 'Beta':
-          pa = pm.Beta(name="pa", alpha=model['pa_a'], beta=model['pa_b'])
-        elif model['pa'] == 'BoundedNormal':
-          BoundedNormal = pm.Bound(pm.Normal, lower=model['pa_lower'], upper=model['pa_upper'])
-          pa = BoundedNormal(name="pa", mu=model['pa_mu'], sigma=model['pa_sigma'])
-        else:
-          pa = pm.Uniform(name="pa", lower=0.15, upper=0.5)
-
-        # Probability of undetected case
-        if model['pu'] == 'BoundedNormal':
-          BoundedNormal_pu = pm.Bound(pm.Normal, lower=model['pu_a'], upper=model['pu_b'])
-          pu = BoundedNormal_pu(name="pu", mu=model['pu_b']-model['pu_a'], sigma=0.2)
-        else:
-          pu = pm.Uniform(name="pu", upper=model['pu_b'], lower=model['pu_a'])
-
-        mu = pm.Lognormal(name="mu", mu=np.log(1 / model['asym_recover_mu_days']), sigma=model['asym_recover_mu_sigma'])    # Asymptomatic infectious period until recovered
-        mus = pm.Lognormal(name="mus", mu=np.log(1 / model['sym_recover_mu_days']), sigma=model['sym_recover_mu_sigma'])   # Pre-Symptomatic infectious period until showing symptoms -> isolated
-        gamma = pm.Lognormal(name="gamma", mu=np.log(1 / model['gamma_mu_days']), sigma=model['gamma_mu_sigma'])
-
-        new_Is_t = SEIRa(lambda_t_log, gamma, mu, mus, pa, pu,
-                        asym_ratio = model['asym_ratio'],  # 0.5 asymptomatic people are less infectious? - source CDC
-                        pr_Ia_begin=pop['pr_Ia_begin'],
-                        pr_Is_begin=pop['pr_Is_begin'],
-                        model=this_model)
-        
-        new_cases_inferred_raw = cov19.model.delay_cases(
-            cases=new_Is_t,
-            pr_mean_of_median=pop['pr_delay_mean_of_median'],
-        )
-
-        # apply a weekly modulation, fewer reports during weekends
-        if 'noweekmod' in pop and pop['noweekmod']:
-          log.info('Not using weekly modulation')
-          new_cases_inferred_tr = pm.Deterministic("new_cases", new_cases_inferred_raw)
-          new_cases_inferred = new_cases_inferred_raw
-        else:
-          new_cases_inferred = cov19.model.week_modulation(
-              new_cases_inferred_raw,
-              pr_mean_weekend_factor=pop['pr_mean_weekend_factor'],  # 1.1
-              pr_sigma_weekend_factor=pop['pr_sigma_weekend_factor'],   # 1.2 0.5 default
-              name_cases="new_cases")
-
-        # set the likeliehood
-        cov19.model.student_t_likelihood(new_cases_inferred)
-
+      with PrevModel(**params_model) as this_model:
         # sampling settings
         numsims = settings['numsims']
         numtune = settings['numtune']
@@ -225,7 +178,7 @@ if __name__=='__main__':
             chains=settings['chains'],
             tune=numtune, 
             draws=numsims, 
-            n_init=50000,     # we really should have converged by 50k
+            n_init=50000,
             init="advi+adapt_diag", cores=cores)
 
         # TODO: check if advi did not converge (model mismatch)
@@ -241,8 +194,8 @@ if __name__=='__main__':
         if pop['run'] == True:
           log.info('Generating plots')
           try:
-            plot_fit(this_model, trace, new_cases, pop, settings, rootpath='/data')
-            plot_prevalence(this_model, trace, pop, settings, rootpath='/data')
+            plot_fit(this_model, trace, new_cases, pop, settings, rootpath=rootpath)
+            plot_prevalence(this_model, trace, pop, settings, rootpath=rootpath)
           except Exception as e:
             log.error(str(e))
 
@@ -266,7 +219,7 @@ if __name__=='__main__':
 
           log.info('Updating CSV files')
           try:
-            _, _ = covprev.data.savecsv(this_model, trace, pop, rootpath='/data')
+            _, _ = covprev.data.savecsv(this_model, trace, pop, rootpath=rootpath)
           except Exception as e:
             log.error(str(e))
 
