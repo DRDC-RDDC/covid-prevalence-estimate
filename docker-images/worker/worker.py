@@ -206,7 +206,7 @@ if __name__=='__main__':
             llostat = pms.loo(trace,pointwise=True, scale="log")
             llostat_str = str(llostat)
 
-            summary = pm.summary(trace, var_names=["pa", "pu","mu","mus", "Is_begin","Ia_begin","E_begin"])
+            summary = pm.summary(trace, var_names=["pa", "pu","mu","mus", "gamma", "Is_begin","Ia_begin","E_begin"])
             summary_str = str(summary)
             savepath = savefolder + '/'+folder+'_stats.txt'
             with open(savepath, 'w') as f:

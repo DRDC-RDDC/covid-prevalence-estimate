@@ -47,10 +47,10 @@ logging.basicConfig(level=logging.INFO,
 log = logging.getLogger(__name__)
 
 rootpath= "/data/covid-prev"
-can_data_path = os.getenv("CAN_DATA_PATH", default="/data/covid-prev/Covid19Canada")
-jhu_data_path = os.getenv("JHU_DATA_PATH", default="/data/covid-prev/COVID-19")
-cov_repo_path = os.getenv("COV_REPO_PATH", default="/data/covid-prev/covid-prevalence-estimate")
-result_repo_path = os.getenv("RESULT_REPO_PATH", default="/data/covid-prev/covid-prevalence")
+can_data_path = os.getenv("CAN_DATA_PATH", default=rootpath+"/Covid19Canada")
+jhu_data_path = os.getenv("JHU_DATA_PATH", default=rootpath+"/COVID-19")
+cov_repo_path = os.getenv("COV_REPO_PATH", default=rootpath+"/covid-prevalence-estimate")
+result_repo_path = os.getenv("RESULT_REPO_PATH", default=rootpath+"/covid-prevalence")
 redis_host = os.getenv("REDIS_SERVICE_HOST", default="redis")
 oauth = os.getenv('GITLAB_OAUTH', default='53gZwasv6UmExxrohqPm')
 
@@ -58,8 +58,8 @@ if __name__=='__main__':
     log.info("Started controller")
 
     # debug
-    sleep(60*60*24*7)
-    os._exit(0)
+    #sleep(60*60*24*7)
+    #os._exit(0)
 
     log.info('pulling latest Canadian data...')
     repo_ishaberry = git.Git(can_data_path)
@@ -77,8 +77,8 @@ if __name__=='__main__':
     log.info('success')
 
     # debug
-    sleep(60*60*24*7)
-    os._exit(0)
+    #sleep(60*60*24*7)
+    #os._exit(0)
 
     '''
     log.info('pulling latest covid-estimate repo...')
