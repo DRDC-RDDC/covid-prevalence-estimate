@@ -50,6 +50,40 @@ def dynamicChangePoints(pop):
     change_points = change_points_d2 
     return change_points
 
+def dynamicEin(model, daystep = 7):
+    ''' Dynamic infection import
+    '''
+    Ein_list = []
+    Ein_0 = pm.HalfNormal(name="Ein_0", sigma=0.1)
+    Ein_list.append(Ein_0)
+
+    t_0 = model.sim_begin
+    T_list = []
+    delta = datetime.datetime.utcnow() - model.data_begin
+    T_list.append(t_0)
+
+    # For each daystep(7)-day period, add an rv
+    for dd in np.arange(daystep,delta.days-daystep,daystep,dtype="int"):
+        Ein_d = pm.HalfNormal(name=f"Ein_{dd}", sigma=0.1)
+        Ein_list.append(Ein_d)
+        T_list.append(t_0 + datetime.timedelta(days=int(dd)))
+    
+    # Convert the values from the rv's to theano tensor
+    T_list = np.array(T_list)
+    Ein_list = np.array(Ein_list)
+    Ein_t_list = []
+    t = np.arange(model.sim_shape[0])
+    for ix, ddays in enumerate(t):  # ddays = 10
+        ix_date = t_0 + datetime.timedelta(days=int(ddays))
+        Ein_dist = Ein_list[T_list <= ix_date][-1]
+        Ein_ix = tt.zeros(model.sim_shape)
+        Ein_ix = tt.set_subtensor(Ein_ix[ix], tt.exp(Ein_dist))
+        Ein_t_list.append(Ein_ix)
+
+    Ein_t_log = tt.log(sum(Ein_t_list))
+    pm.Deterministic("Ein_t", tt.exp(Ein_t_log))
+    return Ein_t_log
+
 def SEIRa(
     lambda_t_log,             # spreading rate over time
     gamma,                    # latent
@@ -60,35 +94,50 @@ def SEIRa(
     asym_ratio=1.0,           # relative infectiousness of asymptomatic cases
     name_new_I_t="new_I_t",
     name_I_begin="I_begin",
-    name_I_t="I_t",
-    name_S_t="S_t",
     pr_E_begin=20,
     pr_Ia_begin=20,
     pr_Is_begin=20,
     pr_mean_median_symptomatic=5,
     pr_sigma_median_symptomatic=1,
     sigma_isolate=0.3,
+    Ein_t_log = None,           # Introduction of infections
+    useHNormInit = True,       
     model=None,
     return_all=False):
-    # Total number of people in population
-    N = model.N_population
 
-    # Prior distributions of starting populations (infectious, exposed, susceptibles)
-    Ia_begin =   pm.HalfCauchy(name="Ia_begin", beta=pr_Ia_begin) #pr_I_begin
-    E_begin =    pm.HalfCauchy(name="E_begin", beta=pr_E_begin)
-    Ecum_begin = pm.HalfCauchy(name="Ecum_begin", beta=1)
-    R_begin =    pm.HalfCauchy(name="R_begin", beta=1)
-    Is_begin =   pm.HalfCauchy(name="Is_begin", beta=pr_Is_begin) #pr_I_begin
+    N = model.N_population  # Total number of people in population
 
-    # Prior for susceptible
-    S_begin = N  - Ia_begin - Is_begin
+    if Ein_t_log is None:   # Default is no introduction 
+      Ein_t_log = -1000 * tt.ones(model.sim_shape)  # computationally 0
+      pm.Deterministic("Ein_t", tt.exp(Ein_t_log))
 
     lambda_t = tt.exp(lambda_t_log)
+    Ein_t = tt.exp(Ein_t_log)
+
+    # Prior distributions of starting populations (infectious, exposed, susceptibles)
+    if useHNormInit:
+        Ia_begin =   pm.HalfNormal(name="Ia_begin", sigma=pr_Ia_begin)
+        Ecum_begin = pm.HalfNormal(name="Ecum_begin", sigma=1)
+        R_begin =    pm.HalfNormal(name="R_begin", sigma=1)
+        Is_begin =   pm.HalfNormal(name="Is_begin", sigma=pr_Is_begin)
+        E_begin =    pm.HalfNormal("E_begin", (Is_begin + Ia_begin)*lambda_t[0])
+    else:
+        Ia_begin =   pm.HalfCauchy(name="Ia_begin", beta=pr_Ia_begin)
+        E_begin =    pm.HalfCauchy(name="E_begin", beta=pr_E_begin)
+        Ecum_begin = pm.HalfCauchy(name="Ecum_begin", beta=1)
+        R_begin =    pm.HalfCauchy(name="R_begin", beta=1)
+        Is_begin =   pm.HalfCauchy(name="Is_begin", beta=pr_Is_begin)
+        E_begin =    pm.HalfCauchy("E_begin", beta=(Is_begin + Ia_begin)*lambda_t[0])
+
+    # Prior for susceptible
+    S_begin = N  - Ia_begin - Is_begin - E_begin
+
     new_I_0 = tt.zeros_like(Ia_begin)
     new_E_0 = tt.zeros_like(Ia_begin)
 
-    # Runs SIRa model:
+    # Runs SEIRa model:
     def next_day(lambda_t, # infection rate
+                 Ein_t,    # imported exposures
                  S_t,      # number of susceptible
                  E_t,      # number of exposed
                  E_cum_t,  # cumulative number exposed
@@ -104,15 +153,14 @@ def SEIRa(
                  pu,
                  N):       # population size
       
-        # New infections:
-
         # New Exposed from asymptomatic + presymptomatic
-        new_E_t = lambda_t / N * (asym_ratio*Ia_t + Is_t) * S_t
+        new_E_t = Ein_t + lambda_t / N * (asym_ratio*Ia_t + Is_t) * S_t
 
-        S_t = S_t - new_E_t
+        S_t = S_t - new_E_t + Ein_t # Note, we add Ein here since these don't come from N
 
         # Exposed become infectious
         new_I_t = E_t * gamma
+        new_I_t = tt.clip(new_I_t, 0, N/2)  # stability
 
         E_t = E_t + new_E_t - new_I_t
         E_cum_t = E_cum_t + new_E_t
@@ -123,17 +171,17 @@ def SEIRa(
         new_Ia_t = pnodet * new_I_t
 
         detected = mus * Is_t
+        recovered = mu * Ia_t
 
         # distribute the new infections to be asymptomatic or symptomatic infectors
-        Ia_t = Ia_t + new_Ia_t - mu * Ia_t  # recover as mu
+        Ia_t = Ia_t + new_Ia_t - recovered  # recover as mu
         Is_t = Is_t + new_Is_t - detected   # isolate as lognorm
-        R_t = mu * Ia_t + detected          # resolved either recovered or isolated
-        new_I_t = tt.clip(new_I_t, 0, N/3)  # for stability
-        Ia_t = tt.clip(Ia_t, -1, N-1)       # for stability
-        Is_t = tt.clip(Is_t, -1, N-1)       # for stability
-        E_t = tt.clip(E_t, -1, N-1)         # for stability
-        S_t  = tt.clip(S_t,  -1, N)         # bound to population
-        R_t  = tt.clip(R_t,  -1, N)         # bound to population
+        R_t = recovered + detected          # resolved either recovered or isolated
+        Ia_t = tt.clip(Ia_t, 0, N-1)        # for stability
+        Is_t = tt.clip(Is_t, 0, N-1)        # for stability
+        E_t = tt.clip(E_t, 0, N-1)          # for stability
+        S_t  = tt.clip(S_t,  0, N)          # bound to population
+        R_t  = tt.clip(R_t,  0, N)          # bound to population
 
         return S_t, E_t, E_cum_t, R_t, Ia_t, Is_t, detected, new_E_t
 
@@ -141,7 +189,7 @@ def SEIRa(
     # what we give in outputs_info : S, I, new_I
     outputs, _ = theano.scan(
         fn=next_day,
-        sequences=[lambda_t],
+        sequences=[lambda_t, Ein_t],
         outputs_info=[
             S_begin, 
             E_begin,
@@ -156,13 +204,10 @@ def SEIRa(
     )
     S_t, E_t, Ecum_t, R_t, Ia_t, Is_t, new_detections, new_E_t = outputs
 
-    # This is the population susceptible
-    if name_S_t is not None:
-        pm.Deterministic(name_S_t, S_t)
+    pm.Deterministic("S_t", S_t)
 
     # This is important for prevalence - the infected asymptomatic = presymptomatic
-    if name_I_t is not None:
-        pm.Deterministic(name_I_t, Ia_t + Is_t)
+    pm.Deterministic("I_t", Ia_t + Is_t)
 
     pm.Deterministic("new_E_t", new_E_t)
     pm.Deterministic("E_t", E_t)
@@ -210,6 +255,9 @@ class PrevModel(Cov19Model):
             change_points_list = dynamicChangePoints(pop),  # these change points are periodic over time and inferred
         )
 
+        # externally introduced cases
+        Ein_t_log = dynamicEin(self)
+
         # Probability of asymptomatic case
         if settings['model']['pa'] == 'Beta':
           pa = pm.Beta(name="pa", alpha=settings['model']['pa_a'], beta=settings['model']['pa_b'])
@@ -234,6 +282,7 @@ class PrevModel(Cov19Model):
                         asym_ratio = settings['model']['asym_ratio'],  # 0.5 asymptomatic people are less infectious? - source CDC
                         pr_Ia_begin=pop['pr_Ia_begin'],
                         pr_Is_begin=pop['pr_Is_begin'],
+                        Ein_t_log = Ein_t_log,
                         model=self)
         
         new_cases_inferred_raw = cov19.model.delay_cases(
@@ -252,6 +301,16 @@ class PrevModel(Cov19Model):
               pr_mean_weekend_factor=pop['pr_mean_weekend_factor'],
               pr_sigma_weekend_factor=pop['pr_sigma_weekend_factor'],
               name_cases="new_cases")
+        
+        # TODO: better selector for when to use student-t vs normal
+        use_st = new_cases_obs.mean() > 40
 
-        # set the likeliehood
-        cov19.model.student_t_likelihood(new_cases_inferred)
+        # set the likelihood
+        if use_st:
+            cov19.model.student_t_likelihood(new_cases_inferred)
+        else:
+            log.info("using normal likelihood")
+            model_cases_inferred = new_cases_inferred[self.diff_data_sim : self.diff_data_sim + self.data_len]
+            sigma_obs = pm.HalfCauchy("sigma_obs", beta=1)
+            sigma_inferred = tt.abs_(model_cases_inferred + 1) ** 0.5 * sigma_obs
+            pm.Normal("new_cases_Norm", mu=model_cases_inferred, sigma=sigma_inferred, observed=new_cases_obs)
