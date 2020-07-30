@@ -131,6 +131,38 @@ def plot_posteriors(this_model, trace, pop, settings,rootpath='/content'):
   plt.savefig(savefolder + r'/' + folder + '_lambda.png')
   plt.close()
 
+def plot_introduction(this_model, trace, pop, settings, closeplot=True):
+  '''
+  '''
+  ShowPreliminary = settings['ShowPreliminary']
+  savefolder, folder = ut.get_folders(pop)
+  Ein_t, x = cov19.plot._get_array_from_trace_via_date(this_model, trace, "Ein_t")
+  y = Ein_t[:, :]
+
+  l_t_05 = []
+  l_t_50 = []
+  l_t_95 = []
+  tx = np.arange(0,y.shape[1])
+  for t in tx:
+    a,b,c = np.percentile(y[:,t],[2.5,50,97.5])
+    l_t_05.append(a)
+    l_t_50.append(b)
+    l_t_95.append(c)
+
+  plt.figure()
+  plt.plot(x,l_t_50, label="Introduced")
+  plt.fill_between(x,l_t_05,l_t_95,lw=0,alpha=0.1, label="95CI")
+
+  plt.xticks(rotation=45)
+  plt.xlabel("Day")
+  plt.title("Imported infections ($E_{in}$)")
+
+  plt.tight_layout()
+  plt.savefig(savefolder + '/'+folder+'_ein.png')
+  if closeplot:
+    plt.close()
+
+
 # This code needs major cleanup
 def plot_prevalence(this_model, trace, pop, settings, closeplot=True, rootpath='/content'): #closeplot=False
   # this is the infected asymptomatic AND symptimatic

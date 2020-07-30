@@ -24,8 +24,8 @@ RUN pip install -r /tmp/requirements.txt
 #RUN pip install -I git+https://oauth2:53gZwasv6UmExxrohqPm@gitlab.com/stevenhorn/covid-prevalence-estimate.git
 
 # Set up users
-RUN useradd --create-home simuser
-RUN groupadd simgroup
+RUN useradd --create-home -u 1002 simuser
+RUN groupadd -g 1003 simgroup
 RUN usermod -a -G simgroup simuser
 
 # This is where temporary simulation data will be placed

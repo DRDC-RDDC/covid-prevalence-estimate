@@ -224,17 +224,18 @@ if __name__=='__main__':
             log.error(str(e))
 
       # We try to push the results to git
-      regionid = pop["source_country"] + pop["source_state"] + ("" if pop["source_region"] == None else pop["source_region"])
-      regionid = regionid.replace(' ','')  # regionid = 'USColoradoElPaso'
-      message = "Updates for " + pop['name'] # message = "Updates for " + regionid
-      try:
-        log.info('Local commit prior to pulling')
-        #repo.git.checkout('-b', worker_branch + '_' + regionid)
-        # we need to commit our changes before pulling
-        repo.git.add('--all')
-        repo.git.commit('-m', message, author='Steven Horn')
-      except git.GitCommandError as e:
-        log.error(str(e))
+      if always_push:
+        regionid = pop["source_country"] + pop["source_state"] + ("" if pop["source_region"] == None else pop["source_region"])
+        regionid = regionid.replace(' ','')  # regionid = 'USColoradoElPaso'
+        message = "Updates for " + pop['name'] # message = "Updates for " + regionid
+        try:
+          log.info('Local commit prior to pulling')
+          #repo.git.checkout('-b', worker_branch + '_' + regionid)
+          # we need to commit our changes before pulling
+          repo.git.add('--all')
+          repo.git.commit('-m', message, author='Steven Horn')
+        except git.GitCommandError as e:
+          log.error(str(e))
       
       if always_push:
         numpushattempts = 0
