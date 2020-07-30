@@ -117,9 +117,6 @@ def plot_posteriors(this_model, trace, pop, settings,rootpath='/content'):
   # spreading rate fit
   ShowPreliminary = settings['ShowPreliminary']
   savefolder, folder = ut.get_folders(pop, rootpath=rootpath)
-  pa = trace["pa"][:, None]
-  pu = trace["pu"][:, None]
-  I_t = trace["I_t"][:, None]
 
   ''' Disable for now
   plt.figure()
@@ -181,10 +178,10 @@ def plot_posteriors(this_model, trace, pop, settings,rootpath='/content'):
 
   plt.xticks(rotation=45)
   plt.xlabel("Day")
-  plt.title("Probability infectious person will infect someone else in a day ($\lambda$) \n %s, pop. = %s" % (pop['name'], N))
+  plt.title("Spreading rate ($\lambda$) \n %s, pop. = %s" % (pop['name'], N))
 
   plt.tight_layout()
-  plt.savefig(savefolder + '/'+folder+'_lambda.png')
+  plt.savefig(savefolder + r'/' + folder + '_lambda.png')
   plt.close()
 
 # This code needs major cleanup

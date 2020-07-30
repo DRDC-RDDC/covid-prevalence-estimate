@@ -53,6 +53,7 @@ def dynamicChangePoints(pop):
 def dynamicEin(model, daystep = 7):
     ''' Dynamic infection import
     '''
+    log.info("Generating dynamic prior for introduced infections (E_in_t)")
     Ein_list = []
     Ein_0 = pm.HalfNormal(name="Ein_0", sigma=0.1)
     Ein_list.append(Ein_0)
@@ -247,6 +248,8 @@ class PrevModel(Cov19Model):
             N_population=N_population,
             name=name, 
             model=model)
+
+        log.info(f"Building model for {pop['name']}")
 
         # apply change points, lambda is in log scale
         lambda_t_log = cov19.model.lambda_t_with_sigmoids(
