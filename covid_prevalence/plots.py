@@ -28,12 +28,10 @@ import logging
 log = logging.getLogger(__name__)
 
 def plot_data(this_model, new_cases, pop, settings, closeplot=True, rootpath='/content'):
+  ''' Plots just the case data
+  '''
   log.info('Plotting Data')
-  ShowPreliminary = settings['ShowPreliminary']
-  popname = pop['name']
-
   savefolder, folder = ut.get_folders(pop, rootpath=rootpath)
-  
   x_data = pd.date_range(start=this_model.data_begin, 
                          end=this_model.data_begin + datetime.timedelta(days=new_cases.shape[0]-1) )
 
@@ -41,11 +39,11 @@ def plot_data(this_model, new_cases, pop, settings, closeplot=True, rootpath='/c
   plt.ylabel("Number of new cases reported")
   ax1.plot(x_data[:len(new_cases.values)], new_cases.values, 'b--', label="new cases data")
   plt.legend()
-  plt.title("Model comparison to data %s" % popname)
+  plt.title(f"Model comparison to data {pop['name']}")
   plt.xticks(rotation=45)
   plt.xlabel("Day")
 
-  if ShowPreliminary:
+  if settings is not None and 'ShowPreliminary' in settings and settings['ShowPreliminary']:
     fig.text(0.75, 0.25, 'PRELIMINARY',
             fontsize=30, color='gray',
             ha='right', va='bottom', alpha=0.5, rotation='30')
@@ -56,9 +54,11 @@ def plot_data(this_model, new_cases, pop, settings, closeplot=True, rootpath='/c
     plt.close()
 
 def plot_fit(this_model, trace, new_cases, pop, settings, closeplot=True,rootpath='/content'):
-  N = this_model.N_population
+  ''' Plots the data and the model trace fits
+  '''
   log.info('Plotting Fit')
-  ShowPreliminary = settings['ShowPreliminary']
+  N = this_model.N_population
+
   popname = pop['name']
   savefolder, folder = ut.get_folders(pop, rootpath=rootpath)
     # inspect the chain realizations
@@ -80,11 +80,7 @@ def plot_fit(this_model, trace, new_cases, pop, settings, closeplot=True,rootpat
   x_data_in = pd.date_range(start=this_model.data_begin, end=this_model.data_end)
   x_sim = pd.date_range(start=this_model.sim_begin, end=this_model.sim_end )
 
-  shift = 0#7
-  x_data2 = pd.date_range(start=this_model.data_begin- datetime.timedelta(shift), end=this_model.data_begin + datetime.timedelta(days=I_t.shape[2]-1) )
-
   fig, ax1 = plt.subplots()
-
   for i in range(numpts):
     ax1.plot(x_sim,I_t[i,:][0],alpha=0.3)
     pass
@@ -98,7 +94,7 @@ def plot_fit(this_model, trace, new_cases, pop, settings, closeplot=True,rootpat
   plt.xticks(rotation=45)
   plt.xlabel("Day")
 
-  if ShowPreliminary:
+  if settings is not None and 'ShowPreliminary' in settings and settings['ShowPreliminary']:
     fig.text(0.75, 0.25, 'PRELIMINARY',
             fontsize=30, color='gray',
             ha='right', va='bottom', alpha=0.5, rotation='30')
@@ -112,69 +108,20 @@ def plot_fit(this_model, trace, new_cases, pop, settings, closeplot=True,rootpat
   log.info('Fit plot saved to %s' % savepath)
 
 def plot_posteriors(this_model, trace, pop, settings,rootpath='/content'):
-  N = this_model.N_population
-
-  # spreading rate fit
-  ShowPreliminary = settings['ShowPreliminary']
-  savefolder, folder = ut.get_folders(pop, rootpath=rootpath)
-
-  ''' Disable for now
-  plt.figure()
-  #plt.subplot(1,2,1)
-  sns.distplot(pa, hist = False, kde = True,
-                bins=30,
-                kde_kws = {'shade': True, 'linewidth': 1,'cumulative': False},
-                label = '$p_a$').set(xlim=(0,1))
-
-  plt.xlabel("probability")
-  plt.ylabel("prob. density")
-  plt.title("Posterior asymptomatic probability")
-  plt.tight_layout()
-  plt.savefig(savefolder + '/'+folder+'_pa.png')
-  plt.close()
-
-  plt.figure()
-  sns.distplot(pu, hist = False, kde = True,
-                bins=30,
-                kde_kws = {'shade': True, 'linewidth': 1,'cumulative': False},
-                label = '$p_u$').set(xlim=(0,1))
-  plt.xlabel("probability")
-  plt.ylabel("prob. density")
-  plt.title("Posterior unreported probability")
-
-  plt.tight_layout()
-  plt.savefig(savefolder + '/'+folder+'_pu.png')
-  plt.close()
-
-  plt.figure()
-  if "mu" in trace:
-    mu = trace["mu"][:, None]
-    plt.plot(1/mu, 'k-')
-  if "mus" in trace:
-    mus = trace["mus"][:, None]
-    plt.plot(1/mus, 'k--')
-  if "gamma" in trace:
-    gamma = trace["gamma"][:, None]
-    plt.plot(1/gamma, 'g-')
+  ''' Plot the posterior spreading rate
   '''
+  N = this_model.N_population
+  savefolder, folder = ut.get_folders(pop, rootpath=rootpath)
 
   lambda_t, x = cov19.plot._get_array_from_trace_via_date(this_model, trace, "lambda_t")
 
   y = lambda_t[:, :]
 
-  l_t_05 = []
-  l_t_50 = []
-  l_t_95 = []
-  tx = np.arange(0,y.shape[1])
-  for t in tx:
-    a,b,c = np.percentile(y[:,t],[2.5,50,97.5])
-    l_t_05.append(a)
-    l_t_50.append(b)
-    l_t_95.append(c)
+  L_t_025, L_t_50, L_t_975 = ut.get_percentile_timeseries(y,islambda=True)
 
   plt.figure()
-  plt.plot(x,l_t_50, label="lambda")
-  plt.fill_between(x,l_t_05,l_t_95,lw=0,alpha=0.1, label="95CI")
+  plt.plot(x,L_t_50, label="lambda")
+  plt.fill_between(x,L_t_025,L_t_975,lw=0,alpha=0.1, label="95CI")
 
   plt.xticks(rotation=45)
   plt.xlabel("Day")
