@@ -3,6 +3,7 @@
     "numsims": 20,
     "chains": 4,
     "numtune": 100,
+    "target_accept": 0.85,
     "frequency": 150,
     "ShowPreliminary": true,
     "model": {
@@ -205,12 +206,13 @@
       "daystep_lambda": 7,
       "median_lambda_0": 0.8,
       "sigma_lambda_0": 0.3,
-      "pr_Ia_begin": 50,
-      "pr_Is_begin": 20,
+      "pr_Ia_begin": 5,
+      "pr_Is_begin": 2,
       "pr_delay_mean_of_median": 3,
-      "pr_mean_weekend_factor": 0.8,
-      "pr_sigma_weekend_factor": 2,
+      "pr_mean_weekend_factor": 0.4,
+      "pr_sigma_weekend_factor": 1,
       "run": true,
+      "target_accept": 0.9,
       "date_start": "2020-03-20T00:00:00"
     },
     {

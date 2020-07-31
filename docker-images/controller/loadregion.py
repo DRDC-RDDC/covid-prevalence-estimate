@@ -25,6 +25,8 @@ log = logging.getLogger(__name__)
 opts = [opt for opt in sys.argv[1:] if opt.startswith("-")]
 args = [arg for arg in sys.argv[1:] if not arg.startswith("-")]
 
+rootpath= "/data/covid-prev"
+
 if __name__=='__main__':
     log.info("Starting controller")
 
@@ -75,10 +77,10 @@ if __name__=='__main__':
 
     # Load the config file from the repo
     log.info("Loading configuration")
-    with open('/data/covid-prevalence-estimate/config/config.json','r') as f:
+    with open(rootpath + '/covid-prevalence-estimate/config/config.json','r') as f:
         config = json.load(f)
 
-    model = config['model']
+    model = config['settings']['model']
     settings = config['settings']
 
     pops = config['populations']
@@ -107,7 +109,7 @@ if __name__=='__main__':
             folder = pop["source_country"] + pop["source_state"] + ("" if pop["source_region"] == None else pop["source_region"])
             folder = folder.replace(' ','')  # folder = 'USMichiganMidland'
             try:
-                savefolder = '/data/covid-prevalence/results/latest/' + folder
+                savefolder = rootpath + '/covid-prevalence/results/latest/' + folder
                 rfilepath = savefolder + '/' + folder + '_latest.csv'
                 dfr = pd.read_csv(rfilepath, parse_dates=['analysisTime'])
                 lastrun = dfr[dfr['nameid'] == folder]['analysisTime']
@@ -132,7 +134,7 @@ if __name__=='__main__':
         # Fetch Data for processing
         log.debug('Fetching region data.')
         try:
-            new_cases, cum_deaths, bd = covprev.data.get_data(pop, rootpath='/data')
+            new_cases, cum_deaths, bd = covprev.data.get_data(pop, rootpath=rootpath)
         except Exception as e:
                 log.error('Error fetching region data.')
                 log.error(str(e))

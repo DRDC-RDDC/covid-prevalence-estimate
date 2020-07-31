@@ -104,7 +104,7 @@ if __name__=='__main__':
   # 30 seconds has elapsed - logging a waiting message.
   timed_out = False
   num_wait_loops = 0
-  while not timed_out and not q.empty():
+  while not timed_out and not (q.empty() and pq.empty()):
     # if we have something in the prioiry queue, then that gets processed next
     ispq = False
     if not pq.empty():
@@ -168,6 +168,10 @@ if __name__=='__main__':
           log.info('numtune override in population')
           numsims = pop['numtune']
 
+        target_accept = settings['target_accept']
+        if 'target_accept' in pop:
+          target_accept = pop['target_accept']
+
         cores = 4
         if pop['run'] == False:
           plot_data(this_model, new_cases, pop, settings)
@@ -179,6 +183,7 @@ if __name__=='__main__':
             tune=numtune, 
             draws=numsims, 
             n_init=50000,
+            target_accept=target_accept,
             init="advi+adapt_diag", cores=cores)
 
         # TODO: check if advi did not converge (model mismatch)
