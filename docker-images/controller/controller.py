@@ -176,11 +176,10 @@ if __name__=='__main__':
                 log.info("Job Skipped: %s, no cases" % pop['name'])
                 continue
 
-            cases_per_day = np.sum(new_cases)/len(new_cases)
-
-            if cases_per_day < 0.2:
-                log.info("Job Skipped: %s, few cases reported" % pop['name'])
-                continue
+            #cases_per_day = np.sum(new_cases)/len(new_cases)
+            #if cases_per_day < 0.2:
+            #    log.info("Job Skipped: %s, few cases reported" % pop['name'])
+            #    continue
 
             # filter for frequency by level of activity in region
             cases_prev10days = np.sum(new_cases[-10:])
@@ -197,8 +196,8 @@ if __name__=='__main__':
                 continue
 
             # don't run more frequently than this
-            if dt_hours < 24*2:
-                log.info("Job Skipped: %s, 2 days not passed" % pop['name'])
+            if dt_hours < 24:
+                log.info("Job Skipped: %s, 1 days not passed" % pop['name'])
                 continue
             # > 30 past 10 days, run daily
 
@@ -231,4 +230,4 @@ if __name__=='__main__':
 
     # Keep the pod active for the next 12 hours.  This is useful for debugging by
     # connecting into the pod shell
-    sleep(60*60*12)
+    sleep(60*60*24*7)
