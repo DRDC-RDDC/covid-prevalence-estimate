@@ -209,7 +209,6 @@ def SEIRa(
 
     # This is important for prevalence - the infected asymptomatic = presymptomatic
     pm.Deterministic("I_t", Ia_t + Is_t)
-
     pm.Deterministic("new_E_t", new_E_t)
     pm.Deterministic("E_t", E_t)
     pm.Deterministic("Ecum_t", Ecum_t)
@@ -307,6 +306,10 @@ class PrevModel(Cov19Model):
         
         # TODO: better selector for when to use student-t vs normal
         use_st = new_cases_obs.mean() > 40
+
+        # Override
+        if 'normal_likelihood' in pop and pop['normal_likelihood']:
+            use_st = False
 
         # set the likelihood
         if use_st:

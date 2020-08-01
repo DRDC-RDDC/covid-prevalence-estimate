@@ -193,7 +193,6 @@ def savecsv(this_model, trace, pop, rootpath='/content'):
 # pop['source_state'] = 'Puerto Rico'
 # pop['date_start'] = '2020-03-14T00:00:00'
 
-
 def get_data(pop, rootpath='/content'):
   bd = isoparse(pop['date_start'])
   if pop['source'] == 'jhu':
@@ -227,13 +226,10 @@ def get_data(pop, rootpath='/content'):
     if pop['source_region'] is None:
       dfddata["deaths"] = df[(pop['source_country'], pop['source_state'])]
     else:
-      dfddata["deaths"] = df#df[(pop['source_country'], pop['source_state'], pop['source_region'])]
+      dfddata["deaths"] = df
 
     end_date = dfddata.index[-1]
-    #dfddatafilter = dfddata[bd:end_date]
     dfdcumdata = dfddata[bd:end_date]
-    #dfddata.plot()
-    #print("Last data: " + str(end_date))
     cum_deaths = dfdcumdata["deaths"]
     
     dataurl = rootpath + r"/COVID-19/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_US.csv"
@@ -263,7 +259,7 @@ def get_data(pop, rootpath='/content'):
     if pop['source_region'] is None:
       dfdata["confirmed"] = df[(pop['source_country'], pop['source_state'])] 
     else:
-      dfdata["confirmed"] = df#df[(pop['source_country'], pop['source_state'], pop['source_region'])]
+      dfdata["confirmed"] = df
 
     end_date = dfdata.index[-1]
     dfdatafilter = dfdata[bd:end_date]
@@ -279,7 +275,7 @@ def get_data(pop, rootpath='/content'):
                 )
     df['date']= pd.to_datetime(df['date'].astype(str), format='%d-%m-%Y')
     df = df.set_index(["province", "health_region"])
-    dfi = df.loc[(pop['source_state'],pop['source_region'])]#df[df['health_region']==pop['source_region']]#'Montréal']
+    dfi = df.loc[(pop['source_state'],pop['source_region'])]
     dfi = dfi.set_index("date")
     dfdata = dfi
     end_date = dfdata.index[-1]
