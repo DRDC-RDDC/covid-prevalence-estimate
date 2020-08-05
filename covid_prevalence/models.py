@@ -290,6 +290,10 @@ class PrevModel(Cov19Model):
         mus = pm.Lognormal(name="mus", mu=np.log(1 / settings['model']['sym_recover_mu_days']), sigma=settings['model']['sym_recover_mu_sigma'])   # Pre-Symptomatic infectious period until showing symptoms -> isolated
         gamma = pm.Lognormal(name="gamma", mu=np.log(1 / settings['model']['gamma_mu_days']), sigma=settings['model']['gamma_mu_sigma'])
 
+        gamma = tt.clip(gamma, 0, 0.95)
+        mus = tt.clip(mus, 0, 0.95)
+        mu = tt.clip(mu, 0, 0.95)
+
         new_Is_t = SEIRa(lambda_t_log, gamma, mu, mus, pa, pu,
                         asym_ratio = settings['model']['asym_ratio'],  # 0.5 asymptomatic people are less infectious? - source CDC
                         pr_Ia_begin=pop['pr_Ia_begin'],
