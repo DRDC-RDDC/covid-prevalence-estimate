@@ -161,18 +161,25 @@ def SEIRa(
 
         # Exposed become infectious
         new_I_t = E_t * gamma
-        new_I_t = tt.clip(new_I_t, 0, N/2)  # stability
+        new_I_t = tt.clip(new_I_t, 0, E_t)  # stability
 
         E_t = E_t + new_E_t - new_I_t
         E_cum_t = E_cum_t + new_E_t
         
         pnodet = 1.0-(1.0-pa)*(1.0-pu)
 
-        new_Is_t = (1 - pnodet) * new_I_t    # assume only symptomatic cases are reported (observed) - this is the variable used for Bayesian updates
+        # we assume only symptomatic + detected cases are reported (observed)
+        # this is the variable used for Bayesian updates
+        new_Is_t = (1 - pnodet) * new_I_t    
         new_Ia_t = pnodet * new_I_t
 
         detected = mus * Is_t
         recovered = mu * Ia_t
+
+        # we clip this since mu/mus could change to infeasible values during the
+        # MCMC sampling process.  This way, we ensure that the model will be robust.
+        detected = tt.clip(detected, 0, Is_t)   # stability
+        recovered = tt.clip(recovered, 0, Ia_t) # stability
 
         # distribute the new infections to be asymptomatic or symptomatic infectors
         Ia_t = Ia_t + new_Ia_t - recovered  # recover as mu
@@ -258,7 +265,10 @@ class PrevModel(Cov19Model):
         )
 
         # externally introduced cases
-        Ein_t_log = dynamicEin(self)
+        if 'no_Ein' in pop and pop['no_Ein']:
+            Ein_t_log = None
+        else:
+            Ein_t_log = dynamicEin(self)
 
         # Probability of asymptomatic case
         if settings['model']['pa'] == 'Beta':
@@ -315,6 +325,7 @@ class PrevModel(Cov19Model):
         if use_st:
             cov19.model.student_t_likelihood(new_cases_inferred)
         else:
+            pop['normal_likelihood'] = True
             log.info("using normal likelihood")
             model_cases_inferred = new_cases_inferred[self.diff_data_sim : self.diff_data_sim + self.data_len]
             sigma_obs = pm.HalfCauchy("sigma_obs", beta=1)

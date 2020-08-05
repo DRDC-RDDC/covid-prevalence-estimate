@@ -171,6 +171,8 @@ if __name__=='__main__':
         target_accept = settings['target_accept']
         if 'target_accept' in pop:
           target_accept = pop['target_accept']
+          
+        log.info("Using target accept %f" % target_accept)
 
         cores = 4
         if pop['run'] == False:
