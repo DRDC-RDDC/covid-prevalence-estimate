@@ -789,7 +789,6 @@
       "pr_mean_weekend_factor": 0.4,
       "pr_sigma_weekend_factor": 1,
       "noweekmod": true,
-      "no_Ein": true,
       "run": true,
       "date_start": "2020-03-14T00:00:00"
     },
