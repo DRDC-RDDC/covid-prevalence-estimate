@@ -290,7 +290,7 @@ class PrevModel(Cov19Model):
         if 'no_Ein' in pop and pop['no_Ein']:
             Ein_t_log = None
         else:
-            Ein_t_log = dynamicEin(self, new_cases)
+            Ein_t_log = dynamicEin(self, new_cases_obs)
 
         # Probability of asymptomatic case
         if settings['model']['pa'] == 'Beta':
