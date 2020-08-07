@@ -33,7 +33,7 @@ def dynamicChangePoints(pop):
     change_points_d2 = []
     daystep = pop['daystep_lambda']
     delta = datetime.datetime.utcnow() - bd
-    for dd in np.arange(daystep,delta.days-daystep,daystep,dtype="int"):
+    for dd in np.arange(daystep,delta.days,daystep,dtype="int"):
         change_points_d2 += [
             dict( # Fit the end
                 pr_mean_date_transient=bd+datetime.timedelta(days=int(dd)),
@@ -50,25 +50,37 @@ def dynamicChangePoints(pop):
     change_points = change_points_d2 
     return change_points
 
-def dynamicEin(model, daystep = 7):
+def dynamicEin(model, new_cases, daystep = 7, mean_import=2, sigma_import=2):
     ''' Dynamic infection import
     '''
     log.info("Generating dynamic prior for introduced infections (E_in_t)")
     Ein_list = []
-    Ein_0 = pm.HalfNormal(name="Ein_0", sigma=0.1)
-    Ein_list.append(Ein_0)
+    cases_first = new_cases[0:daystep].mean()
+    if cases_first > 0:
+        Ein_0 = pm.Normal(name=f"Ein_0", mu=tt.log(mean_import), sigma=tt.log(sigma_import))
+    else:
+        Ein_0 = tt.constant(-1000, dtype='float64') # ~0
 
+    Ein_list.append(Ein_0)
     t_0 = model.sim_begin
     T_list = []
     delta = datetime.datetime.utcnow() - model.data_begin
     T_list.append(t_0)
 
     # For each daystep(7)-day period, add an rv
-    for dd in np.arange(daystep,delta.days-daystep,daystep,dtype="int"):
-        Ein_d = pm.HalfNormal(name=f"Ein_{dd}", sigma=0.1)
-        Ein_list.append(Ein_d)
-        T_list.append(t_0 + datetime.timedelta(days=int(dd)))
+    for dd in np.arange(daystep,delta.days,daystep,dtype="int"):
+        cases_next = new_cases[dd:dd+daystep*2].mean() 
+        if cases_next > 0:
+            Ein_d = pm.Normal(name=f"Ein_{dd}", mu=tt.log(mean_import), sigma=tt.log(sigma_import))
+        else:
+            Ein_d = tt.constant(-1000, dtype='float64') # ~0
+            Ein_list.append(Ein_d)
+            T_list.append(t_0 + datetime.timedelta(days=int(dd)))
     
+    # Don't predict imported cases - no data in prediction leads to over estimation of exposed
+    Ein_list.append(tt.constant(-1000, dtype='float64'))
+    T_list.append(t_0 + datetime.timedelta(days=int(dd+daystep)))
+
     # Convert the values from the rv's to theano tensor
     T_list = np.array(T_list)
     Ein_list = np.array(Ein_list)
@@ -101,10 +113,15 @@ def SEIRa(
     pr_mean_median_symptomatic=5,
     pr_sigma_median_symptomatic=1,
     sigma_isolate=0.3,
+    lambda_max=None,
     Ein_t_log = None,           # Introduction of infections
+    Ein_t_max = 10,             # Maximum allowed imported cases per day
     useHNormInit = True,       
     model=None,
-    return_all=False):
+    return_all=False,
+    gamma_max = 0.95,
+    mus_max = 0.95,
+    mu_max = 0.95):
 
     N = model.N_population  # Total number of people in population
 
@@ -114,6 +131,11 @@ def SEIRa(
 
     lambda_t = tt.exp(lambda_t_log)
     Ein_t = tt.exp(Ein_t_log)
+
+    gamma = tt.clip(gamma, 0, gamma_max)
+    mus = tt.clip(mus, 0, mus_max)
+    mu = tt.clip(mu, 0, mu_max)
+    Ein_t = tt.clip(Ein_t, 0, Ein_t_max)
 
     # Prior distributions of starting populations (infectious, exposed, susceptibles)
     if useHNormInit:
@@ -319,7 +341,7 @@ class PrevModel(Cov19Model):
               name_cases="new_cases")
         
         # TODO: better selector for when to use student-t vs normal
-        use_st = new_cases_obs.mean() > 40
+        use_st = new_cases_obs.mean() > 60
 
         # Override
         if 'normal_likelihood' in pop and pop['normal_likelihood']:
