@@ -289,7 +289,7 @@ class PrevModel(Cov19Model):
         )
 
         # Probability of asymptomatic case
-        model['pa_upper'] = model['pa_mu'] + model['pa_sigma']
+        settings['model']['pa_upper'] = settings['model']['pa_mu'] + settings['model']['pa_sigma']
         if settings['model']['pa'] == 'Beta':
           pa = pm.Beta(name="pa", alpha=settings['model']['pa_a'], beta=settings['model']['pa_b'])
         elif settings['model']['pa'] == 'BoundedNormal':
