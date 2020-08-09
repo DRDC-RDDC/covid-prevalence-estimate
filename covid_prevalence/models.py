@@ -64,7 +64,7 @@ def dynamicEin(model, new_cases, daystep = 7, mean_import=2, sigma_import=2):
     Ein_list.append(Ein_0)
     t_0 = model.sim_begin
     T_list = []
-    delta = datetime.datetime.utcnow() - model.data_begin
+    delta = model.data_end - model.data_begin
     T_list.append(t_0)
 
     # For each daystep(7)-day period, add an rv
@@ -74,8 +74,8 @@ def dynamicEin(model, new_cases, daystep = 7, mean_import=2, sigma_import=2):
             Ein_d = pm.Normal(name=f"Ein_{dd}", mu=tt.log(mean_import), sigma=tt.log(sigma_import))
         else:
             Ein_d = tt.constant(-1000, dtype='float64') # ~0
-            Ein_list.append(Ein_d)
-            T_list.append(t_0 + datetime.timedelta(days=int(dd)))
+        Ein_list.append(Ein_d)
+        T_list.append(t_0 + datetime.timedelta(days=int(dd)))
     
     # Don't predict imported cases - no data in prediction leads to over estimation of exposed
     Ein_list.append(tt.constant(-1000, dtype='float64'))
@@ -176,6 +176,8 @@ def SEIRa(
                  pu,
                  N):       # population size
       
+        lambda_t = tt.clip(lambda_t, 0, 0.9) # prevent explosive growth
+
         # New Exposed from asymptomatic + presymptomatic
         new_E_t = Ein_t + lambda_t / N * (asym_ratio*Ia_t + Is_t) * S_t
 
@@ -286,13 +288,8 @@ class PrevModel(Cov19Model):
             change_points_list = dynamicChangePoints(pop),  # these change points are periodic over time and inferred
         )
 
-        # externally introduced cases
-        if 'no_Ein' in pop and pop['no_Ein']:
-            Ein_t_log = None
-        else:
-            Ein_t_log = dynamicEin(self, new_cases_obs)
-
         # Probability of asymptomatic case
+        model['pa_upper'] = model['pa_mu'] + model['pa_sigma']
         if settings['model']['pa'] == 'Beta':
           pa = pm.Beta(name="pa", alpha=settings['model']['pa_a'], beta=settings['model']['pa_b'])
         elif settings['model']['pa'] == 'BoundedNormal':
@@ -304,7 +301,7 @@ class PrevModel(Cov19Model):
         # Probability of undetected case
         if settings['model']['pu'] == 'BoundedNormal':
           BoundedNormal_pu = pm.Bound(pm.Normal, lower=settings['model']['pu_a'], upper=settings['model']['pu_b'])
-          pu = BoundedNormal_pu(name="pu", mu=settings['model']['pu_b']-settings['model']['pu_a'], sigma=0.2)
+          pu = BoundedNormal_pu(name="pu", mu=(settings['model']['pu_b']-settings['model']['pu_a'])/2+settings['model']['pu_a'], sigma=0.2)
         else:
           pu = pm.Uniform(name="pu", upper=settings['model']['pu_b'], lower=settings['model']['pu_a'])
 
@@ -312,14 +309,18 @@ class PrevModel(Cov19Model):
         mus = pm.Lognormal(name="mus", mu=np.log(1 / settings['model']['sym_recover_mu_days']), sigma=settings['model']['sym_recover_mu_sigma'])   # Pre-Symptomatic infectious period until showing symptoms -> isolated
         gamma = pm.Lognormal(name="gamma", mu=np.log(1 / settings['model']['gamma_mu_days']), sigma=settings['model']['gamma_mu_sigma'])
 
-        gamma = tt.clip(gamma, 0, 0.95)
-        mus = tt.clip(mus, 0, 0.95)
-        mu = tt.clip(mu, 0, 0.95)
+        # externally introduced cases
+        Ein_t_log = None
+        if 'no_Ein' in pop and pop['no_Ein']:
+            Ein_t_log = None
+        else:
+            Ein_t_log = dynamicEin(self, new_cases_obs)
 
         new_Is_t = SEIRa(lambda_t_log, gamma, mu, mus, pa, pu,
                         asym_ratio = settings['model']['asym_ratio'],  # 0.5 asymptomatic people are less infectious? - source CDC
                         pr_Ia_begin=pop['pr_Ia_begin'],
                         pr_Is_begin=pop['pr_Is_begin'],
+                        pr_E_begin=1,
                         Ein_t_log = Ein_t_log,
                         model=self)
         
