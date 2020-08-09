@@ -18,7 +18,7 @@ spec:
         resources:
           limits:
             memory: "2048Mi"
-            cpu: 32
+            cpu: 96
           requests:
             memory: "2048Mi"
             cpu: 15.9

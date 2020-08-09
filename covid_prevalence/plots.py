@@ -179,7 +179,7 @@ def plot_prevalence(this_model, trace, pop, settings, closeplot=True, rootpath='
   new_E_t= trace["new_E_t"][:, None] 
   lambda_t, _ = cov19.plot._get_array_from_trace_via_date(this_model, trace, "lambda_t")
   p0 = 100.0*I_t/N * lambda_t
-  Ip_t = I_t + E_t + R_t
+  Ip_t = I_t + E_t #+ R_t
 
   # we check for degenerate/oscillating solutions if nne < 0 in the trace
   nne = new_E_t/E_t

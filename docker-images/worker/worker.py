@@ -1,6 +1,5 @@
 
 '''
-
 This is the main file for the worker process.  There will normally be
 many worker processes.
 
@@ -44,8 +43,6 @@ import theano
 import theano.tensor as tt
 import pandas as pd
 from covid_prevalence.models import PrevModel
-#import covid19_inference as cov19
-#from covid19_inference.model import *
 from datetime import timezone
 from dateutil.parser import parse, isoparse
 from pathlib import Path
@@ -55,13 +52,7 @@ import covid_prevalence as covprev
 from covid_prevalence.models import SEIRa     # Our model
 from covid_prevalence.models import dynamicChangePoints # Dynamic spreading rate
 from covid_prevalence.plots import plot_data, plot_fit, plot_IFR, plot_posteriors, plot_prevalence
-from covid_prevalence.repository import gitpush
 from covid_prevalence.utility import get_folders
-
-# this is used for json serialization of dates
-def converters(o):
-    if isinstance(o, datetime.datetime):
-        return o.isoformat()
 
 # These plots just look nicer!
 plt.style.use('seaborn-darkgrid')
@@ -198,6 +189,19 @@ if __name__=='__main__':
         pop['draws'] = numsims # This will record the number of runs (-1 default)
         pop['tunes'] = numtune # This will record the number of tuning samples
 
+        # Result validation
+        max_pp = 10  # 10% prevalence is a bit outrageous, so if we go over this...
+        E_t = trace["E_t"][:, None]
+        I_t = trace["I_t"][:, None]
+        PP_t = I_t + E_t
+
+        # median percentile
+        PP_50_t = np.percentile(100*PP_t/pop['N'], 50, axis=0)[0]
+
+        if np.any(PP_50_t > max_pp):
+          # bad run
+          pop["bad"] = True
+
         if pop['run'] == True:
           log.info('Generating plots')
           try:
@@ -218,6 +222,7 @@ if __name__=='__main__':
             savepath = savefolder + '/'+folder+'_stats.txt'
             with open(savepath, 'w') as f:
               f.write('%d Divergences \n' % np.sum(divs))
+              f.write('Failed validation \n' if pop['bad'] else 'Passed validation \n')
               f.write(llostat_str)
               f.write('\n')
               f.write(summary_str)
