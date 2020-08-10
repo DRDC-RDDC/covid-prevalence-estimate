@@ -184,6 +184,8 @@ if __name__=='__main__':
         # Here, we record how long it took to run the model
         stop_time = datetime.datetime.utcnow()
         elapsed_time = stop_time-start_time
+        log.info(f"Elapsed time to complete inference: {str(elapsed_time)}")
+        
         pop['compute_time'] = str(elapsed_time)
         pop['divs'] = -1 # This will record the number of divergences (-1 default)
         pop['draws'] = numsims # This will record the number of runs (-1 default)
@@ -198,6 +200,7 @@ if __name__=='__main__':
         # median percentile
         PP_50_t = np.percentile(100*PP_t/pop['N'], 50, axis=0)[0]
 
+        pop["bad"] = False
         if np.any(PP_50_t > max_pp):
           # bad run
           pop["bad"] = True

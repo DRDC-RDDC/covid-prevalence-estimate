@@ -134,7 +134,7 @@ if __name__=='__main__':
     for pop in config['populations']: # pop = config['populations'][3000]
         if pop['run'] == True:
             # Check when it was last run
-            folder = pop["source_country"] + pop["source_state"] + ("" if pop["source_region"] == None else pop["source_region"])
+            folder = pop["source_country"] + ("" if pop["source_state"] == None else pop["source_state"]) + ("" if pop["source_region"] == None else pop["source_region"])
             folder = folder.replace(' ','')  # folder = 'USMichiganMidland'
             try:
                 savefolder = rootpath + '/covid-prevalence/results/latest/' + folder
