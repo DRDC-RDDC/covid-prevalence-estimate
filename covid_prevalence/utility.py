@@ -16,8 +16,13 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
 
+import datetime
 import numpy as np
 from pathlib import Path
+
+def converters(o):
+    if isinstance(o, datetime.datetime):
+        return o.isoformat()
 
 def get_folders(pop, rootpath='/content'):
   folder = pop["source_country"] + ("" if pop["source_state"] == None else pop["source_state"]) + ("" if pop["source_region"] == None else pop["source_region"])
