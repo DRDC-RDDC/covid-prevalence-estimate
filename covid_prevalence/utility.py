@@ -25,8 +25,12 @@ def converters(o):
         return o.isoformat()
 
 def get_folders(pop, rootpath='/content'):
+  '''
+      Returns: savefolder, nameid
+  '''
   folder = pop["source_country"] + ("" if pop["source_state"] == None else pop["source_state"]) + ("" if pop["source_region"] == None else pop["source_region"])
   folder = folder.replace(' ','')
+  folder = folder.replace('*','')
   savefolder = rootpath + '/covid-prevalence/results/latest/' + folder
   Path(savefolder).mkdir(parents=True, exist_ok=True)
   return savefolder,folder

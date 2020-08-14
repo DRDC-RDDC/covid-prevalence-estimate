@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 import datetime
 import covid_prevalence as covprev
+from covid_prevalence.utility import get_folders
 from covid_prevalence.rediswq import RedisWQ 
 
 ## DEBUGGING IMPORTS
@@ -33,6 +34,7 @@ if __name__=='__main__':
     clone = "-c" in opts
     priority1 = "-P1" in opts
     timefilter = "-tf" in opts
+    checkbad = "-b" in opts
     
     if clone:
         log.info("cloning ishaberry/Covid19Canada Data")
@@ -84,6 +86,7 @@ if __name__=='__main__':
     settings = config['settings']
 
     pops = config['populations']
+
     reqkey = (state, region, country)
 
     for pop in pops:
@@ -93,9 +96,13 @@ if __name__=='__main__':
         ss = pop['source_state']
         if state == '*':
             ss = '*'
+        if state == 'None':
+            ss = 'None'
         sr = pop['source_region']
         if region == '*':
             sr = '*'
+        if region == 'None':
+            sr = 'None'
         sc = pop['source_country']
         if country == '*':
             sc = '*'
@@ -104,10 +111,27 @@ if __name__=='__main__':
         if popkey != reqkey:
             continue
         
+        if checkbad:
+            _, folder = get_folders(pop, rootpath)
+            try:
+                folderpath = rootpath + '/covid-prevalence/results/latest/' + folder
+                stats_file = folderpath + "/" + folder + "_stats.txt"
+                if os.path.exists(stats_file):
+                    with open(stats_file) as f:
+                        divs = f.readline()
+                        divergences = int(divs.split(' ')[0])
+                        validation = f.readline()
+                        if validation.startswith("Passed"):
+                            continue
+            except:
+                log.error('unable to check for bad run' + str(e))
+                continue
+
         if timefilter:
             # Check when it was last run
-            folder = pop["source_country"] + pop["source_state"] + ("" if pop["source_region"] == None else pop["source_region"])
-            folder = folder.replace(' ','')  # folder = 'USMichiganMidland'
+            #folder = pop["source_country"] + ("" if pop["source_state"] == None else pop["source_state"]) + ("" if pop["source_region"] == None else pop["source_region"])
+            #folder = folder.replace(' ','')  # folder = 'USMichiganMidland'
+            _, folder = get_folders(pop, rootpath)
             try:
                 savefolder = rootpath + '/covid-prevalence/results/latest/' + folder
                 rfilepath = savefolder + '/' + folder + '_latest.csv'

@@ -42,7 +42,6 @@ import matplotlib.pyplot as plt
 import theano
 import theano.tensor as tt
 import pandas as pd
-from covid_prevalence.models import PrevModel
 from datetime import timezone
 from dateutil.parser import parse, isoparse
 from pathlib import Path
@@ -50,6 +49,7 @@ import pymc3.stats as pms
 
 import covid_prevalence as covprev
 from covid_prevalence.models import SEIRa     # Our model
+from covid_prevalence.models import PrevModel
 from covid_prevalence.models import dynamicChangePoints # Dynamic spreading rate
 from covid_prevalence.plots import plot_data, plot_fit, plot_IFR, plot_posteriors, plot_prevalence
 from covid_prevalence.utility import get_folders
@@ -185,7 +185,7 @@ if __name__=='__main__':
         stop_time = datetime.datetime.utcnow()
         elapsed_time = stop_time-start_time
         log.info(f"Elapsed time to complete inference: {str(elapsed_time)}")
-        
+
         pop['compute_time'] = str(elapsed_time)
         pop['divs'] = -1 # This will record the number of divergences (-1 default)
         pop['draws'] = numsims # This will record the number of runs (-1 default)
@@ -240,8 +240,9 @@ if __name__=='__main__':
 
       # We try to push the results to git
       if always_push:
-        regionid = pop["source_country"] + pop["source_state"] + ("" if pop["source_region"] == None else pop["source_region"])
-        regionid = regionid.replace(' ','')  # regionid = 'USColoradoElPaso'
+        _, regionid = get_folders(pop, rootpath)
+        #regionid = pop["source_country"] + pop["source_state"] + ("" if pop["source_region"] == None else pop["source_region"])
+        #regionid = regionid.replace(' ','')  # regionid = 'USColoradoElPaso'
         message = "Updates for " + pop['name'] # message = "Updates for " + regionid
         try:
           log.info('Local commit prior to pulling')

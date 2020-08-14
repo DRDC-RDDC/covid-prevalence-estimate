@@ -342,11 +342,11 @@ class PrevModel(Cov19Model):
               name_cases="new_cases")
         
         # TODO: better selector for when to use student-t vs normal
-        use_st = new_cases_obs.mean() > 60
+        use_st = False#new_cases_obs.mean() > 60
 
         # Override
-        if 'normal_likelihood' in pop and pop['normal_likelihood']:
-            use_st = False
+        if 'normal_likelihood' in pop and pop['normal_likelihood'] == False:
+            use_st = True
 
         # set the likelihood
         if use_st:

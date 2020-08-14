@@ -34,6 +34,7 @@ import numpy as np
 import pandas as pd
 import datetime
 import covid_prevalence as covprev
+from covid_prevalence.utility import get_folders
 from covid_prevalence.rediswq import RedisWQ 
 
 ## DEBUGGING IMPORTS
@@ -77,8 +78,8 @@ if __name__=='__main__':
     log.info('success')
 
     # debug
-    #sleep(60*60*24*7)
-    #os._exit(0)
+    sleep(60*60*24*7)
+    os._exit(0)
 
     '''
     log.info('pulling latest covid-estimate repo...')
@@ -134,8 +135,9 @@ if __name__=='__main__':
     for pop in config['populations']: # pop = config['populations'][3000]
         if pop['run'] == True:
             # Check when it was last run
-            folder = pop["source_country"] + ("" if pop["source_state"] == None else pop["source_state"]) + ("" if pop["source_region"] == None else pop["source_region"])
-            folder = folder.replace(' ','')  # folder = 'USMichiganMidland'
+            #folder = pop["source_country"] + ("" if pop["source_state"] == None else pop["source_state"]) + ("" if pop["source_region"] == None else pop["source_region"])
+            #folder = folder.replace(' ','')  # folder = 'USMichiganMidland'
+            _, folder = get_folders(pop, rootpath)
             try:
                 savefolder = rootpath + '/covid-prevalence/results/latest/' + folder
                 rfilepath = savefolder + '/' + folder + '_latest.csv'
