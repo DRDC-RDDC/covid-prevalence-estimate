@@ -10,4 +10,3 @@ from . import models
 from . import plots
 from . import utility
 from . import data
-from . import rediswq

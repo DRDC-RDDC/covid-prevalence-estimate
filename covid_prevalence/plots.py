@@ -16,6 +16,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
 
+import os
 import covid19_inference as cov19
 import datetime
 import matplotlib.pyplot as plt
@@ -125,16 +126,15 @@ def plot_posteriors(this_model, trace, pop, settings,rootpath='/content'):
 
   plt.xticks(rotation=45)
   plt.xlabel("Day")
-  plt.title("Spreading rate ($\lambda$) \n %s, pop. = %s" % (pop['name'], N))
+  plt.title(r"Spreading rate ($\lambda$)" + os.linesep + "%s, pop. = %s" % (pop['name'], N))
 
   plt.tight_layout()
   plt.savefig(savefolder + r'/' + folder + '_lambda.png')
   plt.close()
 
 def plot_introduction(this_model, trace, pop, settings, closeplot=True):
+  ''' Plot of the introduction of new infections estimate
   '''
-  '''
-  ShowPreliminary = settings['ShowPreliminary']
   savefolder, folder = ut.get_folders(pop)
   Ein_t, x = cov19.plot._get_array_from_trace_via_date(this_model, trace, "Ein_t")
   y = Ein_t[:, :]
@@ -175,7 +175,7 @@ def plot_prevalence(this_model, trace, pop, settings, closeplot=True, rootpath='
 
   N = this_model.N_population
   E_t = trace["E_t"][:, None]
-  R_t = trace["R_t"][:, None]
+  #R_t = trace["R_t"][:, None]  # this is actually the number quarantined at time t
   I_t = trace["I_t"][:, None]
   new_E_t= trace["new_E_t"][:, None] 
   lambda_t, _ = cov19.plot._get_array_from_trace_via_date(this_model, trace, "lambda_t")
@@ -431,8 +431,6 @@ def plot_prevalence(this_model, trace, pop, settings, closeplot=True, rootpath='
     plt.ylim(0,1)
     maxy = 1
   plt.plot([datetime.datetime.today(), datetime.datetime.today()], [0,maxy],'r-', label="Today")
-  #plt.yscale('log')
-  #plt.ylim((0,10))
   plt.xticks(rotation=45)
   plt.title("Prevalence of COVID-19 \n %s, pop. = %s" % (popname, N))
   plt.legend()
@@ -454,20 +452,14 @@ def plot_IFR(this_model, trace, pop, settings, cum_deaths, rootpath='/content'):
   ShowPreliminary = settings['ShowPreliminary']
   popname = pop['name']
   savefolder, folder = ut.get_folders(pop, rootpath=rootpath)
+
   # IFR estimate
   death_t = np.array(cum_deaths)
-  #print(death_t)
   trimend = -1  
   shift = 0
   Ecum_t = trace["Ecum_t"][:, None]
-
-  #print(cum_deaths.index[0])
-  #print(cum_deaths.index.shape)
-
-  deathdelay = 0#13   # https://www.medrxiv.org/content/10.1101/2020.03.05.20031773v2.full.pdf
-
+  deathdelay = 0
   Ecum_t = Ecum_t[:,:,deathdelay:cum_deaths.index.shape[0]+deathdelay]
-
   Ecum_t_05 = []
   Ecum_t_50 = []
   Ecum_t_95 = []
@@ -481,14 +473,10 @@ def plot_IFR(this_model, trace, pop, settings, cum_deaths, rootpath='/content'):
     Ecum_t_95.append(c)
 
   x_data2 = pd.date_range(start=this_model.data_begin, end=this_model.data_begin + datetime.timedelta(days=Ecum_t.shape[2]-1) )
-  #print(Ecum_t.shape[2]-1)
-  fig, ax1 = plt.subplots()
+  fig, _ = plt.subplots()
   trimstart = 14
   plt.plot(x_data2[trimstart:trimend-shift],Ecum_t_50[trimstart:trimend], label="Infected")
   plt.fill_between(x_data2[trimstart:trimend-shift],Ecum_t_05[trimstart:trimend],Ecum_t_95[trimstart:trimend],lw=0,alpha=0.1, label="95CI")
-
-  x_data3 = pd.date_range(start=cum_deaths.index[0],end=cum_deaths.index[-1])
-
   plt.title("Running Estimate of IFR: %s" % popname)
   plt.xlabel("Date")
   plt.xticks(rotation=45)
@@ -499,14 +487,12 @@ def plot_IFR(this_model, trace, pop, settings, cum_deaths, rootpath='/content'):
             fontsize=30, color='gray',
             ha='right', va='bottom', alpha=0.5, rotation='30')
 
-
   plt.tight_layout()
   plt.savefig(savefolder + '/'+folder+'_running_IFR.png')
   plt.close()
 
   plt.figure()
   values = 100*death_t[-1]/Ecum_t[:,0,-1]
-  #print (values)
   sns.distplot(values, hist = False, kde = True,
                 bins=30,
                 kde_kws = {'shade': True, 'linewidth': 1,'cumulative': False},
@@ -514,8 +500,6 @@ def plot_IFR(this_model, trace, pop, settings, cum_deaths, rootpath='/content'):
   plt.title("Estimated IFR")
   plt.xlabel("%")
   plt.ylabel("prob. density")
-
   plt.tight_layout()
   plt.savefig(savefolder + '/'+folder+'_IFR.png')
-
   plt.close()
