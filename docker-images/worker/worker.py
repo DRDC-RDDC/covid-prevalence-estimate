@@ -48,7 +48,6 @@ from pathlib import Path
 import pymc3.stats as pms
 
 import covid_prevalence as covprev
-from covid_prevalence.models import SEIRa     # Our model
 from covid_prevalence.models import PrevModel
 from covid_prevalence.models import dynamicChangePoints # Dynamic spreading rate
 from covid_prevalence.plots import plot_data, plot_fit, plot_IFR, plot_posteriors, plot_prevalence
@@ -70,7 +69,7 @@ log = logging.getLogger(__name__)
 # These are (optionally) configurable values via environment variables
 host = os.getenv("REDIS_SERVICE_HOST", default="redis")
 queuename = os.getenv('redis_worker_queue', default='covidprev')
-oauth = os.getenv('gitlab_oauth', default='53gZwasv6UmExxrohqPm')
+oauth = os.getenv('gitlab_oauth', default='')
 timelimit = 60*60*1 # these hours should be enough per region - make env?
 
 rootpath = "/data/covid-prev"

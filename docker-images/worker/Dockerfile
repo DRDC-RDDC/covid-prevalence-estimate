@@ -25,7 +25,7 @@ COPY requirements.txt /tmp/
 RUN pip install -r /tmp/requirements.txt
 
 # force re-install of covprev package (incremental build)
-RUN pip install -I git+https://oauth2:53gZwasv6UmExxrohqPm@gitlab.com/stevenhorn/covid-prevalence-estimate.git
+RUN pip install -I git+https://gitlab.com/stevenhorn/covid-prevalence-estimate.git
 
 RUN useradd --create-home -u 1002 simuser
 RUN groupadd -g 1003 simgroup

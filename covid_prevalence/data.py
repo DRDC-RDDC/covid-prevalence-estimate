@@ -186,13 +186,6 @@ def savecsv(this_model, trace, pop, rootpath='/content'):
   '''
   return dfu, dfnow
 
-#debug
-# pop = {}
-# pop['source_region'] = None
-# pop['source_country'] = 'US'
-# pop['source_state'] = 'Puerto Rico'
-# pop['date_start'] = '2020-03-14T00:00:00'
-
 def get_data(pop, rootpath='/content'):
   bd = isoparse(pop['date_start'])
   if pop['source'] == 'jhu':

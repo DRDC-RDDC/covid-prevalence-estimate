@@ -6,5 +6,5 @@ pandas
 seaborn
 GitPython
 redis
-git+https://oauth2:53gZwasv6UmExxrohqPm@gitlab.com/stevenhorn/covid-prevalence-estimate.git
+git+https://gitlab.com/stevenhorn/covid-prevalence-estimate.git
 https://github.com/Priesemann-Group/covid19_inference/archive/master.zip

@@ -29,10 +29,14 @@ import covid19_inference as cov19
 log = logging.getLogger(__name__)
 
 def dynamicChangePoints(pop):
+    ''' Time dependent spreading rate
+    '''
+
     bd = isoparse(pop['date_start']) # This is the first day of data
     change_points_d2 = []
     daystep = pop['daystep_lambda']
     delta = datetime.datetime.utcnow() - bd
+
     for dd in np.arange(daystep,delta.days,daystep,dtype="int"):
         change_points_d2 += [
             dict( # Fit the end

@@ -162,9 +162,10 @@ def plot_introduction(this_model, trace, pop, settings, closeplot=True):
   if closeplot:
     plt.close()
 
-
 # This code needs major cleanup
-def plot_prevalence(this_model, trace, pop, settings, closeplot=True, rootpath='/content'): #closeplot=False
+def plot_prevalence(this_model, trace, pop, settings, closeplot=True, rootpath='/content'):
+  '''
+  '''
   # this is the infected asymptomatic AND symptimatic
   ShowPreliminary = settings['ShowPreliminary']
   popname = pop['name']

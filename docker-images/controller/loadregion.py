@@ -1,9 +1,8 @@
-
-
 import logging
 import json
 import git
 import os
+import sys
 import numpy as np
 import pandas as pd
 import datetime
@@ -14,9 +13,6 @@ from covid_prevalence.rediswq import RedisWQ
 ## DEBUGGING IMPORTS
 from random import randint
 from time import sleep
-##
-
-import sys
 
 logging.basicConfig(level=logging.INFO, 
     format="%(asctime)s %(levelname)-8s [%(name)s] %(message)s",
@@ -38,22 +34,25 @@ if __name__=='__main__':
     
     if clone:
         log.info("cloning ishaberry/Covid19Canada Data")
-        # ! git clone https://github.com/ishaberry/Covid19Canada.git --depth 1 --branch master --single-branch /content/Covid19Canada
         repo_ishaberry = git.Repo.clone_from("https://github.com/ishaberry/Covid19Canada.git", 
             "/content/Covid19Canada", 
             depth=1,
             branch="master")
 
         log.info("cloning CSSEGISandData/COVID-19 Data")
-        #! git clone https://github.com/CSSEGISandData/COVID-19.git --depth 1 --branch master --single-branch /content/COVID-19
         repo_jhu = git.Repo.clone_from("https://github.com/CSSEGISandData/COVID-19.git", 
             "/content/COVID-19", 
             depth=1,
             branch="master")
 
-        oauth = os.getenv('gitlab_oauth', default='53gZwasv6UmExxrohqPm')
-
-        repopath = "https://oauth2:"+ oauth +"@gitlab.com/stevenhorn/covid-prevalence-estimate.git"
+        # If the repository is set to use an oauth token, apply it
+        oauth = os.getenv('gitlab_oauth', default='')
+        repo_url = os.getenv('gitlab_oauth', default='gitlab.com/stevenhorn/covid-prevalence-estimate.git')
+        if oauth == '':
+            repopath = "https://" + repo_url
+        else:
+            log.info('using Oauth token for repo ' + repo_url)
+            repopath = "https://oauth2:"+ oauth + "@" + repo_url
 
         log.info("cloning program from %s" % repopath)
 
@@ -90,7 +89,6 @@ if __name__=='__main__':
     reqkey = (state, region, country)
 
     for pop in pops:
-
         # This is how we handle wildcards 
         # so you can call loadregion -P1 Canada * *    which loads all CAN
         ss = pop['source_state']
@@ -129,8 +127,6 @@ if __name__=='__main__':
 
         if timefilter:
             # Check when it was last run
-            #folder = pop["source_country"] + ("" if pop["source_state"] == None else pop["source_state"]) + ("" if pop["source_region"] == None else pop["source_region"])
-            #folder = folder.replace(' ','')  # folder = 'USMichiganMidland'
             _, folder = get_folders(pop, rootpath)
             try:
                 savefolder = rootpath + '/covid-prevalence/results/latest/' + folder
@@ -160,7 +156,7 @@ if __name__=='__main__':
         try:
             new_cases, cum_deaths, bd = covprev.data.get_data(pop, rootpath=rootpath)
         except Exception as e:
-                log.error('Error fetching region data.')
+                log.error('Error fetching region data for ' + pop['name'])
                 log.error(str(e))
                 continue
 
