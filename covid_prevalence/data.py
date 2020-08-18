@@ -25,7 +25,7 @@ import pandas as pd
 from . import utility as ut
 
 def savecsv(this_model, trace, pop, rootpath='/content'):
-  '''
+  ''' Export results as csv files
   '''
   analysis_date = datetime.datetime.utcnow()
   savefolder, folder = ut.get_folders(pop, rootpath=rootpath)
@@ -49,8 +49,6 @@ def savecsv(this_model, trace, pop, rootpath='/content'):
   FIPS = int(FIPS)
 
   # Timeseries
-  #filepath='/content/covid-prevalence/results/latest_timeseries.csv'
-  
   N = pop['N']
   E_t = trace["E_t"][:, None]
   R_t = trace["R_t"][:, None]
@@ -59,7 +57,7 @@ def savecsv(this_model, trace, pop, rootpath='/content'):
   lambda_t, x = cov19.plot._get_array_from_trace_via_date(this_model, trace, "lambda_t")
   Ip_t = I_t + E_t + R_t
   
-  # we check for degenerate/oscillating solutions if nne < 0 in the trace
+  # we check for degenerate/oscillating solutions if nne < 0 in the trace (This shouldn't happen!)
   nne = new_E_t/E_t
   degens = nne < 0
   degen = np.array([np.sum(d[0])>0 for d in degens])
@@ -68,6 +66,7 @@ def savecsv(this_model, trace, pop, rootpath='/content'):
   I_t_025, I_t_50, I_t_975 = ut.get_percentile_timeseries(I_t, degen=degen)
   L_t_025, L_t_50, L_t_975 = ut.get_percentile_timeseries(lambda_t, islambda=True, degen=degen)
 
+  # These will be the columns in the CSV file
   data = dict(
     FIPS = FIPS,
     HR_UID = list(np.repeat(hr_uid,x.shape[0])),
@@ -98,31 +97,10 @@ def savecsv(this_model, trace, pop, rootpath='/content'):
   dfr=dfr.sort_values(by=['dates'])
   dfr['FIPS'] = dfr['FIPS'].astype(int)
   dfr.to_csv(rfilepath, index=False, float_format='%.8f')
-
-  dfu = dfr
-  ''' Saving timeseries for all regions to one file is not efficient
-  if os.path.isfile(filepath):
-    df = pd.read_csv(filepath)
-    
-    # save backup
-    #timestamp = analysis_date.timestamp()
-    #df.to_csv(filepath + '.%d.csv' % timestamp, index=False)
-
-    # remove region from df and replace with new dates2 and values2
-    dfn = df.loc[lambda df: df['nameid'] != folder]
-    dfu = pd.concat([dfn,dfr])
-  else:
-    # new file
-    dfu = dfr
-
-  # save
-  dfu=dfu.sort_values(by=['nameid'])
-  dfu.to_csv(filepath, index=False, float_format='%.8f')
-  '''
-
+  dfu = dfr # update is only the region
   todayix = np.where(x > analysis_date)[0][0] - 1
 
-  # point result
+  # point result csv file (time of analysis)
   data_now = dict(
     FIPS = FIPS,
     HR_UID = hr_uid,
@@ -152,38 +130,10 @@ def savecsv(this_model, trace, pop, rootpath='/content'):
     infectrate_975 = L_t_975[todayix],
     )
 
-  dfnowr = pd.DataFrame(data_now)
-
-  #filepath='/content/covid-prevalence/results/latest_results.csv'
+  dfnow = pd.DataFrame(data_now)
   rfilepath = savefolder + '/' + folder + '_latest.csv'
-  # save
-  #dfnowr=dfnowr.sort_values(by=['nameid'])
-  # make sure FIPS is saved as an integer
-  dfnowr['FIPS'] = dfnowr['FIPS'].astype(int)
-  dfnowr.to_csv(rfilepath, index=False, float_format='%.8f')
-  dfnow = dfnowr
-  '''
-  if os.path.isfile(filepath):
-    df = pd.read_csv(filepath)
-    
-    # save backup
-    #timestamp = analysis_date.timestamp()
-    #df.to_csv(filepath + '.%d.csv' % timestamp, index=False)
-
-    # remove region from df and replace with new dates2 and values2
-    dfn = df.loc[lambda df: df['nameid'] != folder]
-
-    dfnow = pd.concat([dfn,dfnowr])
-  else:
-    # new file
-    dfnow = dfnowr
-
-  # save
-  dfnow=dfnow.sort_values(by=['nameid'])
-  # make sure FIPS is saved as an integer
-  dfnow['FIPS'] = dfnow['FIPS'].astype(int)
-  dfnow.to_csv(filepath, index=False, float_format='%.8f')
-  '''
+  dfnow['FIPS'] = dfnow['FIPS'].astype(int) # make sure FIPS is saved as an integer
+  dfnow.to_csv(rfilepath, index=False, float_format='%.8f') # save with 8 decimal places
   return dfu, dfnow
 
 def get_data(pop, rootpath='/content'):
@@ -289,7 +239,7 @@ def get_data(pop, rootpath='/content'):
       dfdatafilter = dfdata[bd:end_date]
       cum_deaths = dfdatafilter["deaths"]
     except:
-      # IFR will not work
+      # IFR estimation will not work without deaths, but we need a value here. TODO: better error handling.
       cum_deaths = new_cases
 
   return new_cases, cum_deaths, bd

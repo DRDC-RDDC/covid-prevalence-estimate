@@ -33,9 +33,9 @@ def dynamicChangePoints(pop):
     '''
 
     bd = isoparse(pop['date_start']) # This is the first day of data
-    change_points_d2 = []
     daystep = pop['daystep_lambda']
     delta = datetime.datetime.utcnow() - bd
+    change_points_d2 = []
 
     for dd in np.arange(daystep,delta.days,daystep,dtype="int"):
         change_points_d2 += [
@@ -44,7 +44,7 @@ def dynamicChangePoints(pop):
                 pr_median_transient_len=daystep/2,    # how fast is this transition?  
                 pr_sigma_transient_len=0.5,   # uncertainty how long to apply
                 pr_sigma_date_transient=2,    # uncertainty when applied
-                relative_to_previous=True,    
+                relative_to_previous=True,    # link spreading rate relative to previous time period
                 pr_factor_to_previous=1,      # mean moves log this -> i.e. log(1) = 0+
                 pr_median_lambda=0,           # normal offset rel to prev
                 pr_sigma_lambda=0.2,
@@ -259,7 +259,9 @@ def SEIRa(
         return new_detections
 
 class PrevModel(Cov19Model):
-    '''
+    ''' Super class to represent point prevelance model
+
+    This inherits from the Cov19Model class, which is developed by https://github.com/Priesemann-Group/covid19_inference
     '''
     def __init__(
             self,

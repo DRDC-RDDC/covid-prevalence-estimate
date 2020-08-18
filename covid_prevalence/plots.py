@@ -170,7 +170,7 @@ def plot_prevalence(this_model, trace, pop, settings, closeplot=True, rootpath='
   ShowPreliminary = settings['ShowPreliminary']
   popname = pop['name']
   savefolder, folder = ut.get_folders(pop, rootpath=rootpath)
-  trimend = -1#-25
+  trimend = -1
   trimstart=0
 
   N = this_model.N_population
@@ -313,97 +313,7 @@ def plot_prevalence(this_model, trace, pop, settings, closeplot=True, rootpath='
   plt.savefig(savefolder + '/'+folder+'_prev.png')
   if closeplot:
     plt.close()
-
-  '''
-  fig, ax1 = plt.subplots()
-
-  # Cap the upper bound to 100%
-  I_t_50 = np.array(I_t_50)
-  I_t_50[I_t_50 > 100] = 100
-
-  plt.plot(x_sim,I_t_50, label="Prevalence")
-
-  # Cap the upper bound to 100%
-  I_t_975 = np.array(I_t_975)
-  I_t_975[I_t_975 > 100] = 100
-
-  plt.fill_between(x_sim,I_t_025,I_t_975,lw=0,alpha=0.1, label="95CI")
-  plt.title("Infectious prevalence ($I$)\n %s, pop. = %s" % (popname, N))
-  plt.ylabel("%")
-  plt.xlabel("Date")
-  plt.xticks(rotation=45)
-  start, end = ax1.get_ylim()
-  locs, _ = plt.yticks()
-  ax2 = ax1.twinx()
-  ax2.set_ylim(start,end)
-  labs = ["%d" % (N*l/100.0) for l in locs]
-  ax2.set_yticklabels(labs)
-  ax2.grid(False)
-  plt.ylabel("# of infections")
-  ax1.legend()
-
-  maxy = np.max(I_t_975)
-  plt.plot([datetime.datetime.today(), datetime.datetime.today()], [0,maxy],'r-', label="Today")
-
-  if ShowPreliminary:
-    fig.text(0.75, 0.25, 'PRELIMINARY',
-            fontsize=30, color='gray',
-            ha='right', va='bottom', alpha=0.5, rotation='30')
-
-  plt.tight_layout()
-  plt.savefig(savefolder + '/'+folder+'_prev_i.png')
-  if closeplot:
-    plt.close()
-
-  fig, ax1 = plt.subplots()
-  plt.plot(x_sim,p_t_50, label="Prevalence")
-  plt.fill_between(x_sim,p_t_05,p_t_95,lw=0,alpha=0.1, label="95CI")
-  plt.title("Infectious prevalence times probability of infecting ($p_0$)\n %s, pop. = %s" % (popname, N))
-  plt.ylabel("$p_0$ (%)")
-  plt.xlabel("Date")
-  plt.xticks(rotation=45)
-
-  maxy = np.max(p_t_95)
-  if maxy < 0.01:
-    plt.ylim(0,0.01)
-    maxy = 0.01
-  plt.plot([datetime.datetime.today(), datetime.datetime.today()], [0,maxy],'r-', label="Today")
-
-  if ShowPreliminary:
-    fig.text(0.75, 0.25, 'PRELIMINARY',
-            fontsize=30, color='gray',
-            ha='right', va='bottom', alpha=0.5, rotation='30')
-
-  plt.tight_layout()
-  plt.savefig(savefolder + '/'+folder+'_p0.png')
-  if closeplot:
-    plt.close()
-'''
-  # Sym and asym
-  ''' Removed this plot for now
-  fig, ax1 = plt.subplots()
-
-  plt.plot(x_sim,Ia_t_50, label="Asymptomatic or undetected")
-  plt.fill_between(x_sim,Ia_t_05,Ia_t_95,lw=0,alpha=0.1, label="95CI")
-  plt.plot(x_sim,Is_t_50, label="Presymptomatic")
-  plt.fill_between(x_sim,Is_t_05,Is_t_95,lw=0,alpha=0.1, label="95CI")
-  plt.ylabel("# of infections")
-  plt.xticks(rotation=45)
-  plt.title("Prevalence of COVID-19 \n %s, pop. = %s" % (popname, N))
-  plt.legend()
-  plt.xlabel("Date")
-
-  if ShowPreliminary:
-    fig.text(0.75, 0.25, 'PRELIMINARY',
-            fontsize=30, color='gray',
-            ha='right', va='bottom', alpha=0.5, rotation='30')
-
-  plt.tight_layout()
-  plt.savefig(savefolder + '/'+folder+'_a_s.png')
-  if closeplot:
-    plt.close()
-  '''
-
+    
   I_t_025 = []
   I_t_50 = []
   I_t_975 = []

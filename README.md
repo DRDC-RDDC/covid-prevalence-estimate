@@ -1,3 +1,5 @@
+![](img/DRDC.png)
+
 # COVID-Prevalence-Estimate
 
 An implementation of Bayesian inference of COVID-19 point-prevalence.
@@ -49,3 +51,5 @@ Copyright (c) Her Majesty the Queen in Right of Canada, as represented by the Mi
 
 This software is a derived work and uses, under GPL-3.0, parts of Bayesian inference and forecast of COVID-19, code repository: https://github.com/Priesemann-Group/covid19_inference
 (C) Copyright 2020, Jonas Dehning, Johannes Zierenberg, F. Paul Spitzner, Michael Wibral, Joao Pinheiro Neto, Michael Wilczek, Viola Priesemann
+
+![](img/Canada.png)
