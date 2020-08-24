@@ -34,7 +34,7 @@ def savecsv(this_model, trace, pop, rootpath='/content'):
 
   if pop['source'] == 'codwg':
     infodf = pd.read_csv(rootpath + '/Covid19Canada/other/hr_map.csv')
-    popinfo = infodf.loc[lambda df: (df['Province'] == pop["source_state"]) & (df['health_region'] == pop["source_region"])]
+    popinfo = infodf.loc[lambda df: (df['province'] == pop["source_state"]) & (df['health_region'] == pop["source_region"])]
     hr_uid = popinfo["HR_UID"].to_numpy()[0]
   
   if pop['source'] == 'jhu-us':
