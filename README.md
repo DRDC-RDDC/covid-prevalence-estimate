@@ -2,23 +2,17 @@
 
 # COVID-Prevalence-Estimate
 
-An implementation of Bayesian inference of COVID-19 point-prevalence.
+An implementation of Bayesian inference and prediction of COVID-19 point-prevalence.
 
-Definition of point-prevalence:  The portion of infected individuals at any given time.
+Definition of point-prevalence:  The portion of infected individuals in a population at a given time.
 
-## Architecture
+## Model Description
 
-This code is configured to be run on a compute cluster using a 
-Kubernetes + Docker framework - such as on Amazon Elastic Kubernetes Service.
+The model is an SEIR-like model, which treats case detections as biased for symptomatic onset with a variable delay to test report.
+Consideration is given for the likelihood of asymptomatic cases and undetected cases.
+Since the focus of this model is on active (infectious) cases in the population, recovery in quarantine and deaths are not considered.
 
-The program is structured into 3 primary components.
-
-1. Controller Pod.  This loads the data and configuration and creates work units.
-2. Redis Pod.  This is a processing and messaging bus which holds the work queues.
-3. Worker Jobs. This is the processing unit, which can scale out and consumes work units.
-
-When the workers are completed, they submit their results to a pre-configured
-git repository.
+Once the model is tuned to the case detections of the population, a prediction is provided to provide an indication of the expected future prevalence and cases.
 
 ## Acknowledgements
 
