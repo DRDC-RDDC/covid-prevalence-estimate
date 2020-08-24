@@ -5,7 +5,7 @@
     "numtune": 100,
     "target_accept": 0.9,
     "frequency": 150,
-    "ShowPreliminary": true,
+    "ShowPreliminary": false,
     "model": {
       "pa_description": "Prior distribution for probability that an infection will be asymptomatic.",
       "pa": "BoundedNormal",
