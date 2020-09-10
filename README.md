@@ -8,8 +8,9 @@ Definition of point-prevalence:  The portion of infected individuals in a popula
 
 ## Model Description
 
-The model is an SEIR-like model, which treats case detections as biased for symptomatic onset with a variable delay to test report.
-Consideration is given for the likelihood of asymptomatic cases and undetected cases.
+The model is an SEIR-like model, which treats reported cases as a biased partial measure of symptomatic onset with a variable delay to test and report.
+Consideration is given for the likelihood of asymptomatic cases and undetected cases, as indicated from the current epidemiological parameter estimates.
+The model debiases the case data for reporting and epidemiological effects using the entire data hysteresis to provide an estimate of the true prevalence within a population.
 Since the focus of this model is on active (infectious) cases in the population, recovery in quarantine and deaths are not considered.
 
 Once the model is tuned to the case detections of the population, a prediction is provided to provide an indication of the expected future prevalence and cases.
