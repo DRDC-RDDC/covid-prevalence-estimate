@@ -168,6 +168,15 @@ def plot_prevalence(this_model, trace, pop, settings, closeplot=True, rootpath='
   '''
   # this is the infected asymptomatic AND symptimatic
   ShowPreliminary = settings['ShowPreliminary']
+
+  ShowWatermark = False
+  if 'ShowWatermark' in settings:
+    ShowWatermark = settings['ShowWatermark']
+  
+  Watermark = ""
+  if 'Watermark' in settings:
+    Watermark = settings['Watermark']
+
   popname = pop['name']
   savefolder, folder = ut.get_folders(pop, rootpath=rootpath)
   trimend = -1
@@ -281,18 +290,34 @@ def plot_prevalence(this_model, trace, pop, settings, closeplot=True, rootpath='
   x_sim = pd.date_range(start=this_model.sim_begin, end=this_model.sim_end )
 
   fig, ax1 = plt.subplots()
+
+  SMALL_SIZE = 14#8
+  MEDIUM_SIZE = 16#10
+  BIGGER_SIZE = 24#12
+
+  plt.rc('font', size=SMALL_SIZE)          # controls default text sizes
+  plt.rc('axes', titlesize=SMALL_SIZE)     # fontsize of the axes title
+  plt.rc('axes', labelsize=MEDIUM_SIZE)    # fontsize of the x and y labels
+  plt.rc('xtick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
+  plt.rc('ytick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
+  plt.rc('legend', fontsize=SMALL_SIZE)    # legend fontsize
+  plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
+
   plt.plot(x_sim,Ip_t_50, label="Prevalence")
   plt.fill_between(x_sim,Ip_t_05,Ip_t_95,lw=0,alpha=0.1, label="95CI")
-  maxy = np.max(Ip_t_95)
+  # maxy = np.max(Ip_t_95)
+  maxy = np.max(Ip_t_50) * 1.05
+  plt.ylim(0,maxy)
+
   if maxy < 0.01:
     plt.ylim(0,0.01)
     maxy = 0.01
 
-  plt.plot([datetime.datetime.today(), datetime.datetime.today()], [0,maxy],'r-', label="Today")
-  plt.ylabel("%")
+  plt.plot([datetime.datetime.today(), datetime.datetime.today()], [0,maxy],'r-', label="Latest data")
+  plt.ylabel("Prevalence (%)")
   plt.xticks(rotation=45)
-  plt.title("Prevalence of COVID-19 \n %s, pop. = %s" % (popname, N))
-  plt.xlabel("Date")
+  plt.title("Prevalence of COVID-19 \n %s, pop. %d" % (popname, N))
+  # plt.xlabel("Date")
   start, end = ax1.get_ylim()
   locs, _ = plt.yticks()
 
@@ -303,6 +328,11 @@ def plot_prevalence(this_model, trace, pop, settings, closeplot=True, rootpath='
   ax2.grid(False)
   plt.ylabel("# of infections")
   ax1.legend()
+
+  if ShowWatermark:
+    fig.text(0.9, 0.02, Watermark,
+            fontsize=9, color='gray',
+            ha='right', va='bottom', alpha=0.5)
 
   if ShowPreliminary:
     fig.text(0.75, 0.25, 'PRELIMINARY',
