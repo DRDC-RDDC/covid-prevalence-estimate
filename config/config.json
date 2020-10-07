@@ -1,5 +1,7 @@
 {
   "settings": {
+    "ShowWatermark": true,
+    "Watermark": "S Horn, DRDC CORA",
     "numsims": 40,
     "chains": 2,
     "numtune": 100,
@@ -22,11 +24,11 @@
       "asym_ratio": 0.5,
       "gamma_mu_description": "Latent period",
       "gamma_mu_days": 5.4,
-      "gamma_mu_sigma": 0.95,
+      "gamma_mu_sigma": 0.2,
       "asym_recover_mu_days": 10,
-      "asym_recover_mu_sigma": 1.95,
+      "asym_recover_mu_sigma": 0.2,
       "sym_recover_mu_days": 7,
-      "sym_recover_mu_sigma": 1.75
+      "sym_recover_mu_sigma": 0.2
     }
   },
   "populations": [
@@ -99,6 +101,28 @@
       "source_country": "Canada",
       "source_state": "Quebec",
       "source_region": "Montréal",
+      "fcast_len": 15,
+      "diff_data_sim": 5,
+      "daystep_lambda": 7,
+      "median_lambda_0": 0.8,
+      "sigma_lambda_0": 0.3,
+      "pr_Ia_begin": 3,
+      "pr_Is_begin": 5,
+      "pr_delay_mean_of_median": 5,
+      "pr_mean_weekend_factor": 0.4,
+      "pr_sigma_weekend_factor": 1,
+      "target_accept": 0.9,
+      "normal_likelihood": true,
+      "run": true,
+      "date_start": "2020-03-20T00:00:00"
+    },
+    {
+      "name": "Nunavut - Nunavut",
+      "N": 38780,
+      "source": "codwg",
+      "source_country": "Canada",
+      "source_state": "Nunavut",
+      "source_region": "Nunavut",
       "fcast_len": 15,
       "diff_data_sim": 5,
       "daystep_lambda": 7,
