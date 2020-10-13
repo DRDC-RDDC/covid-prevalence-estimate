@@ -33,10 +33,16 @@ def savecsv(this_model, trace, pop, rootpath='/content'):
   FIPS = 0
 
   if pop['source'] == 'codwg':
-    infodf = pd.read_csv(rootpath + '/Covid19Canada/other/hr_map.csv')
-    popinfo = infodf.loc[lambda df: (df['province'] == pop["source_state"]) & (df['health_region'] == pop["source_region"])]
-    hr_uid = popinfo["HR_UID"].to_numpy()[0]
-  
+    #infodf = pd.read_csv(rootpath + '/Covid19Canada/other/hr_map.csv')
+    #popinfo = infodf.loc[lambda df: (df['province'] == pop["source_state"]) & (df['health_region'] == pop["source_region"])]
+    #hr_uid = popinfo["HR_UID"].to_numpy()[0]
+    
+    # the health region id is now saved in the pop dictionary
+    hr_uid = pop['geoid']
+
+  if pop['source'] == 'codwg-plus-sk':
+    hr_uid = pop['geoid']
+
   if pop['source'] == 'jhu-us':
     infodf = pd.read_csv(rootpath + '/covid-prevalence/data/UID_ISO_FIPS_LookUp_Table.csv')
     if pop['source_region'] is None:
@@ -208,7 +214,57 @@ def get_data(pop, rootpath='/content'):
     dfdatafilter = dfdata[bd:end_date]
     dfdatafilter = (dfdatafilter.diff().drop(dfdatafilter.index[0]).astype(int))
     new_cases = dfdatafilter["confirmed"]
-    
+  
+  elif pop['source'] == 'codwg-plus-sk':
+    dataurl = "https://dashboard.saskatchewan.ca/export/cases/1688.csv"
+    df = pd.read_csv(dataurl)
+
+    df = df[["Date", "New Cases", "Region"]].rename(
+                columns={"New Cases": "confirmed", "Date":"date", "Region":"health_region"}
+            )
+    df['date']= pd.to_datetime(df['date'].astype(str), format='%Y/%m/%d')
+    df = df.set_index(["health_region"])
+    dfi = df.loc[(pop['source_region'])]#df[df['health_region']==pop['source_region']]#'Montréal']
+    dfi = dfi.set_index("date")
+    dfdata = dfi
+    end_date = dfdata.index[-1]
+
+    if 'bd' not in locals():
+      bd = dfdata.index[0]
+
+    if bd < dfdata.index[0]:
+      bd = dfdata.index[0]
+
+    dfdatafilter = dfdata[bd:end_date]
+    new_cases = dfdatafilter["confirmed"]
+  
+    try:
+      dataurl = "https://dashboard.saskatchewan.ca/export/cases/1688.csv"
+
+      df = pd.read_csv(dataurl)
+
+      df = df[["Date", "Deaths", "Region"]].rename(
+                  columns={"Deaths": "deaths", "Date":"date", "Region":"health_region"}
+              )
+      df['date']= pd.to_datetime(df['date'].astype(str), format='%Y/%m/%d')
+      df = df.set_index(["health_region"])
+      dfi = df.loc[(pop['source_region'])]
+      dfi = dfi.set_index("date")
+      dfdata = dfi
+      end_date = dfdata.index[-1]
+
+      if 'bd' not in locals():
+        bd = dfdata.index[0]
+
+      if bd < dfdata.index[0]:
+        bd = dfdata.index[0]
+
+      dfdatafilter = dfdata[bd:end_date]
+      cum_deaths = dfdatafilter["deaths"]
+    except:
+      # IFR estimation will not work without deaths, but we need a value here. TODO: better error handling.
+      cum_deaths = new_cases
+
   elif pop['source'] == 'codwg':
     # Check if we've downloaded the latest
     dataurl = rootpath + r"/Covid19Canada/timeseries_hr/cases_timeseries_hr.csv"
