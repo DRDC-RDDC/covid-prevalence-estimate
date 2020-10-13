@@ -38,10 +38,10 @@ def savecsv(this_model, trace, pop, rootpath='/content'):
     #hr_uid = popinfo["HR_UID"].to_numpy()[0]
     
     # the health region id is now saved in the pop dictionary
-    hr_uid = pop['geoid']
+    hr_uid = int(pop['geoid'])
 
   if pop['source'] == 'codwg-plus-sk':
-    hr_uid = pop['geoid']
+    hr_uid = int(pop['geoid'])
 
   if pop['source'] == 'jhu-us':
     infodf = pd.read_csv(rootpath + '/covid-prevalence/data/UID_ISO_FIPS_LookUp_Table.csv')
