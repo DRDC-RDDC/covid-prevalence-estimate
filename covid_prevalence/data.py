@@ -22,6 +22,8 @@ from dateutil.parser import parse, isoparse
 import numpy as np
 import os
 import pandas as pd
+import requests
+import re
 from . import utility as ut
 
 def savecsv(this_model, trace, pop, rootpath='/content'):
@@ -216,7 +218,11 @@ def get_data(pop, rootpath='/content'):
     new_cases = dfdatafilter["confirmed"]
   
   elif pop['source'] == 'codwg-plus-sk':
-    dataurl = "https://dashboard.saskatchewan.ca/export/cases/1688.csv"
+    pageurl = "https://dashboard.saskatchewan.ca/health-wellness/covid-19/cases"
+    page = requests.get(pageurl)
+    htmltext = page.text
+    filename = re.search(r"\d+.csv", htmltext).group()
+    dataurl = "https://dashboard.saskatchewan.ca/export/cases/" + filename
     df = pd.read_csv(dataurl)
 
     df = df[["Date", "New Cases", "Region"]].rename(

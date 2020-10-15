@@ -179,8 +179,6 @@ def plot_prevalence(this_model, trace, pop, settings, closeplot=True, rootpath='
 
   popname = pop['name']
   savefolder, folder = ut.get_folders(pop, rootpath=rootpath)
-  trimend = -1
-  trimstart=0
 
   N = this_model.N_population
   E_t = trace["E_t"][:, None]
@@ -341,49 +339,6 @@ def plot_prevalence(this_model, trace, pop, settings, closeplot=True, rootpath='
 
   plt.tight_layout()
   plt.savefig(savefolder + '/'+folder+'_prev.png')
-  if closeplot:
-    plt.close()
-    
-  I_t_025 = []
-  I_t_50 = []
-  I_t_975 = []
-  trimend = -1
-  trimstart = -45#60
-  tx = np.arange(0,I_t.shape[2])
-  #N = 36e6
-  for t in tx:
-    a,b,c = np.percentile(I_t[:,0,t],[2.5,50,97.5])
-    if a < 0:
-      a = 0
-    if b < 0:
-      b = 0
-    if c < 0:
-      c = 0
-    I_t_025.append(a)
-    I_t_50.append(b)
-    I_t_975.append(c)
-
-  fig = plt.figure()
-  plt.plot(x_sim[trimstart:trimend],I_t_50[trimstart:trimend], label="Prevalence")
-  plt.fill_between(x_sim[trimstart:trimend],I_t_025[trimstart:trimend],I_t_975[trimstart:trimend],lw=0,alpha=0.1, label="95CI")
-  maxy = np.max(I_t_975[trimstart:trimend])
-  if maxy < 1:
-    plt.ylim(0,1)
-    maxy = 1
-  plt.plot([datetime.datetime.today(), datetime.datetime.today()], [0,maxy],'r-', label="Today")
-  plt.xticks(rotation=45)
-  plt.title("Prevalence of COVID-19 \n %s, pop. = %s" % (popname, N))
-  plt.legend()
-  plt.xlabel("Date")
-  plt.ylabel("# undetected infections")
-
-  if ShowPreliminary:
-    fig.text(0.75, 0.25, 'PRELIMINARY',
-            fontsize=30, color='gray',
-            ha='right', va='bottom', alpha=0.5, rotation='30')
-
-  plt.tight_layout()
-  plt.savefig(savefolder + '/'+folder+'_predict.png')
   if closeplot:
     plt.close()
 
