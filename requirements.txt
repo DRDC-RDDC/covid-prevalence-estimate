@@ -1,6 +1,6 @@
 numpy
 matplotlib
-theano-pymc==1.0.12
+theano-pymc==1.0.11
 pymc3==3.10.0
 pandas
 seaborn
