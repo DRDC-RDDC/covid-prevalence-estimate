@@ -1,7 +1,7 @@
 numpy
 matplotlib
-pymc3==3.9.1
-theano
+theano-pymc==1.0.12
+pymc3==3.10.0
 pandas
 seaborn
 GitPython
