@@ -402,6 +402,32 @@ def get_data(pop, rootpath="/content"):
             # IFR estimation will not work without deaths, but we need a value here. TODO: better error handling.
             cum_deaths = new_cases
 
+    elif pop["source"] == "BC-VI":
+        """This handles the special case for vancouver island data.
+        The CODWG has vancouver island consolidated into a single zone, but there are three sub-zones reported
+        by BC CDC.  Here, we can load data from those sub-zones.
+        """
+        dataurl = "http://www.bccdc.ca/Health-Info-Site/Documents/BCCDC_COVID19_Regional_Summary_Data.csv"
+        df = pd.read_csv(dataurl)
+        df = df.drop(columns=["Cases_Reported_Smoothed", "Province"]).rename(
+            columns={
+                "Cases_Reported": "confirmed",
+                "Date": "date",
+                "HA": "source_state",
+                "HSDA": "source_region",
+            }
+        )
+        df["date"] = pd.to_datetime(df["date"].astype(str), format="%Y-%m-%d")
+        df = df.set_index(["source_state", "source_region"])
+        dfi = df.loc[(pop["source_state"], pop["source_region"])]
+        dfi = dfi.set_index("date")
+        dfdata = dfi
+        end_date = dfdata.index[-1]
+        dfdatafilter = dfdata[bd:end_date]
+        new_cases = dfdatafilter["confirmed"]
+
+        # IFR will not work
+        cum_deaths = new_cases
     elif pop["source"] == "codwg":
         # Check if we've downloaded the latest
         dataurl = rootpath + r"/Covid19Canada/timeseries_hr/cases_timeseries_hr.csv"
