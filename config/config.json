@@ -417,7 +417,7 @@
       "pr_sigma_weekend_factor": 1,
       "run": true,
       "date_start": "2020-03-14T00:00:00",
-      "geoid": ""
+      "geoid": "999001"
     },
     {
       "name": "BC - Island - Central",
@@ -438,7 +438,7 @@
       "pr_sigma_weekend_factor": 1,
       "run": true,
       "date_start": "2020-03-14T00:00:00",
-      "geoid": ""
+      "geoid": "999002"
     },
     {
       "name": "BC - Island - North",
@@ -459,7 +459,7 @@
       "pr_sigma_weekend_factor": 1,
       "run": true,
       "date_start": "2020-03-14T00:00:00",
-      "geoid": ""
+      "geoid": "999003"
     },
     {
       "name": "BC - Northern",
