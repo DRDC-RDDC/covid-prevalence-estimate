@@ -464,3 +464,80 @@ def get_data(pop, rootpath="/content"):
             cum_deaths = new_cases
 
     return new_cases, cum_deaths, bd
+
+
+def savecuminf(this_model, trace, pop, rootpath="/content", debug=False):  # debug=True
+    analysis_date = datetime.datetime.utcnow()
+    savefolder, folder = ut.get_folders(pop, rootpath=rootpath)
+    hr_uid = 0
+
+    if pop["source"] == "codwg":
+        infodf = pd.read_csv(rootpath + "/Covid19Canada/other/hr_map.csv")
+        popinfo = infodf.loc[
+            lambda df: (df["province"] == pop["source_state"])
+            & (df["health_region"] == pop["source_region"])
+        ]
+        hr_uid = popinfo["HR_UID"].to_numpy()[0]
+
+    filepath = savefolder + "/" + folder + "_cuminf.csv"
+    N = this_model.N_population
+    Ec_t = trace["Ecum_t"][:, None]
+    lambda_t, x = cov19.plot._get_array_from_trace_via_date(
+        this_model, trace, "lambda_t"
+    )
+
+    if debug:
+        analysis_date = x[-2]
+
+    numpts = Ec_t.shape[0]
+    numtimes = Ec_t.shape[2]
+    Ec_t_025 = []
+    Ec_t_50 = []
+    Ec_t_975 = []
+    for t in range(numtimes):  # t=0
+        Ec_ti = Ec_t[:, 0, t]
+        a, b, c = np.percentile(100 * Ec_ti / N, [2.5, 50, 97.5])
+        if a < 0:
+            a = 0
+        if b < 0:
+            b = 0
+        if c < 0:
+            c = 0
+        Ec_t_025.append(a)
+        Ec_t_50.append(b)
+        Ec_t_975.append(c)
+
+    todayix = np.where(x > analysis_date)[0][0] - 1
+
+    # point result
+    data_now = dict(
+        HR_UID=hr_uid,
+        nameid=folder,
+        province=pop["source_state"],
+        region=pop["source_region"],
+        analysisTime=analysis_date,
+        dates=x[todayix],
+        cuminf_025=[100 * Ec_t_025[todayix] / N if Ec_t_025[todayix] >= 0 else 0.0],
+        cuminf_50=[100 * Ec_t_50[todayix] / N if Ec_t_50[todayix] >= 0 else 0.0],
+        cuminf_975=[100 * Ec_t_975[todayix] / N if Ec_t_975[todayix] >= 0 else 0.0],
+    )
+
+    dfnowr = pd.DataFrame(data_now)
+
+    if os.path.isfile(filepath):
+        df = pd.read_csv(filepath)
+
+        # save backup
+        timestamp = analysis_date.timestamp()
+        # df.to_csv(filepath + '.%d.csv' % timestamp, index=False)
+
+        # remove region from df and replace with new dates2 and values2
+        dfn = df.loc[lambda df: df["nameid"] != folder]
+
+        dfnow = pd.concat([dfn, dfnowr])
+    else:
+        # new file
+        dfnow = dfnowr
+
+    # save
+    dfnow.to_csv(filepath, index=False)
