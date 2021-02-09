@@ -517,9 +517,9 @@ def savecuminf(this_model, trace, pop, rootpath="/content", debug=False):  # deb
         region=pop["source_region"],
         analysisTime=analysis_date,
         dates=x[todayix],
-        cuminf_025=[100 * Ec_t_025[todayix] / N if Ec_t_025[todayix] >= 0 else 0.0],
-        cuminf_50=[100 * Ec_t_50[todayix] / N if Ec_t_50[todayix] >= 0 else 0.0],
-        cuminf_975=[100 * Ec_t_975[todayix] / N if Ec_t_975[todayix] >= 0 else 0.0],
+        cuminf_025=[100 * Ec_t_025[todayix] if Ec_t_025[todayix] >= 0 else 0.0],
+        cuminf_50=[100 * Ec_t_50[todayix] if Ec_t_50[todayix] >= 0 else 0.0],
+        cuminf_975=[100 * Ec_t_975[todayix] if Ec_t_975[todayix] >= 0 else 0.0],
     )
 
     dfnowr = pd.DataFrame(data_now)
