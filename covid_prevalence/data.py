@@ -19,6 +19,7 @@
 import covid19_inference as cov19
 import datetime
 from dateutil.parser import parse, isoparse
+from scipy import stats
 import numpy as np
 import os
 import pandas as pd
@@ -464,6 +465,70 @@ def get_data(pop, rootpath="/content"):
             cum_deaths = new_cases
 
     return new_cases, cum_deaths, bd
+
+
+def saveunderasc(this_model, trace, pop, rootpath="/content", debug=False):
+    analysis_date = datetime.datetime.utcnow()
+    savefolder, folder = ut.get_folders(pop)
+    hr_uid = 0
+    lambda_t, x = cov19.plot._get_array_from_trace_via_date(
+        this_model, trace, "lambda_t"
+    )
+    todayix = np.where(x > analysis_date)[0][0] - 1
+
+    if pop["source"] == "codwg":
+        infodf = pd.read_csv(rootpath + "/Covid19Canada/other/hr_map.csv")
+        popinfo = infodf.loc[
+            lambda df: (df["province"] == pop["source_state"])
+            & (df["health_region"] == pop["source_region"])
+        ]
+        hr_uid = popinfo["HR_UID"].to_numpy()[0]
+
+    filepath = savefolder + "/" + folder + "_underasc.csv"
+
+    with this_model:
+        pa = trace["pa"]
+        pu = trace["pu"]
+        pnodet = 1 - (1 - pa) * (1 - pu)
+        ua = 1 / (1 - pnodet)
+
+        # apply a kernel over distribution - boost statistics
+        kernel = stats.gaussian_kde(ua)
+        values = kernel.resample(1000)[0]
+        # sns.kdeplot(values, shade=True, label='Posterior')  # debug - make sure the resampling is correct.
+        a, b, c = np.percentile(values, [2.5, 50, 97.5])
+
+        data_now = dict(
+            HR_UID=hr_uid,
+            nameid=folder,
+            province=pop["source_state"],
+            region=pop["source_region"],
+            analysisTime=analysis_date,
+            dates=x[todayix],
+            underasc_025=[a],
+            underasc_50=[b],
+            underasc_975=[c],
+        )
+
+        dfnowr = pd.DataFrame(data_now)
+
+        if os.path.isfile(filepath):
+            df = pd.read_csv(filepath)
+
+            # save backup
+            timestamp = analysis_date.timestamp()
+            # df.to_csv(filepath + '.%d.csv' % timestamp, index=False)
+
+            # remove region from df and replace with new dates2 and values2
+            dfn = df.loc[lambda df: df["nameid"] != folder]
+
+            dfnow = pd.concat([dfn, dfnowr])
+        else:
+            # new file
+            dfnow = dfnowr
+
+        # save
+        dfnow.to_csv(filepath, index=False)
 
 
 def savecuminf(this_model, trace, pop, rootpath="/content", debug=False):  # debug=True
