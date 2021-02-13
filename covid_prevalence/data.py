@@ -469,7 +469,7 @@ def get_data(pop, rootpath="/content"):
 
 def saveunderasc(this_model, trace, pop, rootpath="/content", debug=False):
     analysis_date = datetime.datetime.utcnow()
-    savefolder, folder = ut.get_folders(pop)
+    savefolder, folder = ut.get_folders(pop, rootpath=rootpath)
     hr_uid = 0
     lambda_t, x = cov19.plot._get_array_from_trace_via_date(
         this_model, trace, "lambda_t"
