@@ -1,4 +1,5 @@
 numpy
+arviz==0.10
 matplotlib
 theano-pymc==1.0.11
 pymc3==3.10.0
